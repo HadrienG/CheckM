@@ -17,6 +17,9 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+from builtins import range
+
 """
 Calculate marker set for varying lineages, number of genomes, and marker set parameters.
 """
@@ -51,14 +54,14 @@ class MarkerSetTest(object):
 
         genomeIds = img.genomeIdsByTaxonomy(taxonomyStr, 'Final')
 
-        print 'Lineage ' + taxonomyStr + ' contains ' + str(len(genomeIds)) + ' genomes.'
+        print('Lineage ' + taxonomyStr + ' contains ' + str(len(genomeIds)) + ' genomes.')
         if len(genomeIds) < minGenomes:
             sys.stderr.write('[Error] Insufficent number of genomes.\n')
             sys.exit()
 
-        print ''
-        print 'Ubiquity threshold: ' + str(ubiquityThreshold)
-        print 'Single-copy threshold: ' + str(singleCopyThreshold)
+        print('')
+        print('Ubiquity threshold: ' + str(ubiquityThreshold))
+        print('Single-copy threshold: ' + str(singleCopyThreshold))
 
         meanMarkerSetSize = []
         stdMarkerSetSize = []
@@ -72,9 +75,9 @@ class MarkerSetTest(object):
         countTable = img.countTable(genomeIds)
         countTable = img.filterTable(genomeIds, countTable)
 
-        for numGenomes in xrange(minGenomes, maxGenomes, stepSize):
+        for numGenomes in range(minGenomes, maxGenomes, stepSize):
             markerSetSize = []
-            for _ in xrange(0, replicates):
+            for _ in range(0, replicates):
                 genomeIdSubset = random.sample(genomeIds, numGenomes)
 
                 markerGenes = markergenes.identify(genomeIdSubset, countTable, ubiquityThreshold*len(genomeIdSubset), singleCopyThreshold*len(genomeIdSubset))
@@ -92,10 +95,10 @@ class MarkerSetTest(object):
             s = std(markerSetSize)
             stdMarkerSetSize.append(s)
 
-            print ''
-            print 'Genomes: ' + str(numGenomes) + ', Ubiquity > ' + str(int(ubiquityThreshold*len(genomeIdSubset))) + ', Single-copy > ' + str(int(singleCopyThreshold*len(genomeIdSubset)))
-            print 'Mean: %.2f +/- %.2f' % (m, s)
-            print 'Min: %d, Max: %d' %(min(markerSetSize), max(markerSetSize))
+            print('')
+            print('Genomes: ' + str(numGenomes) + ', Ubiquity > ' + str(int(ubiquityThreshold*len(genomeIdSubset))) + ', Single-copy > ' + str(int(singleCopyThreshold*len(genomeIdSubset))))
+            print('Mean: %.2f +/- %.2f' % (m, s))
+            print('Min: %d, Max: %d' %(min(markerSetSize), max(markerSetSize)))
 
         # plot data
         errorBar = ErrorBar()

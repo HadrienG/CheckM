@@ -17,6 +17,8 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 """
 Gather all phylogenetically informative HMMs into a single model file.
 """
@@ -40,24 +42,24 @@ class GetPhylogeneticHMMs(object):
     def run(self, phyloHMMs, geneTrees, outputFile):
         # get list of phylogenetically informative marker genes
         files = os.listdir(geneTrees)
-        
+
         markerIds = []
         for f in files:
             if f.endswith('.tre'):
                 markerId = f[0:f.find('.')]
                 markerIds.append(markerId)
-                
-        print 'Identified %d phylogenetically informative marker genes.' % (len(markerIds))
-                
+
+        print('Identified %d phylogenetically informative marker genes.' % (len(markerIds)))
+
         # place all phylogenetically informative marker genes into a single model file
         fout = open(outputFile, 'w')
         for markerId in markerIds:
             for line in open(os.path.join(phyloHMMs, markerId + '.hmm')):
                 fout.write(line)
-        
+
         fout.close()
-        
-        print 'HMMs written to: ' + outputFile
+
+        print('HMMs written to: ' + outputFile)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Gather all phylogenetically informative HMMs into a single model file.",

@@ -21,6 +21,9 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+from builtins import range
+
 __prog_desc__ = "identify genes suitable for phylogenetic inference"
 
 __author__ = 'Donovan Parks'
@@ -53,24 +56,24 @@ class PhylogeneticInferenceGenes(object):
         markerSetBuilder = MarkerSetBuilder()
 
         metadata = img.genomeMetadata()
-                        
+
         allTrustedGenomeIds = set()
         phyloMarkerGenes = {}
         for lineage in ['Archaea', 'Bacteria']:
             # get all genomes in lineage
-            print '\nIdentifying all ' + lineage + ' genomes.'
+            print('\nIdentifying all ' + lineage + ' genomes.')
             trustedGenomeIds = img.genomeIdsByTaxonomy(lineage, metadata)
-            print '  Trusted genomes in lineage: ' + str(len(trustedGenomeIds))
+            print('  Trusted genomes in lineage: ' + str(len(trustedGenomeIds)))
             if len(trustedGenomeIds) < 1:
-                print '  Skipping lineage due to insufficient number of genomes.'
+                print('  Skipping lineage due to insufficient number of genomes.')
                 continue
-            
+
             allTrustedGenomeIds.update(trustedGenomeIds)
-            
-            print '  Building marker set.'
+
+            print('  Building marker set.')
             markerGenes = markerSetBuilder.buildMarkerGenes(trustedGenomeIds, phyloUbiquityThreshold, phyloSingleCopyThreshold)
             phyloMarkerGenes[lineage] = markerGenes
-            
+
             #print lineage
             #print len(markerGenes)
             #print 'pfam01379: ', ('pfam01379' in markerGenes)
@@ -88,11 +91,11 @@ class PhylogeneticInferenceGenes(object):
         fout.write(str(universalMarkerGenes))
         fout.close()
 
-        print ''
-        print '  Universal marker genes: ' + str(len(universalMarkerGenes))
-        
+        print('')
+        print('  Universal marker genes: ' + str(len(universalMarkerGenes)))
+
         return allTrustedGenomeIds, universalMarkerGenes
-    
+
     def __genesInGenomes(self, allTrustedGenomeIds):
         genesInGenomes = {}
         for genomeId in allTrustedGenomeIds:
@@ -106,12 +109,12 @@ class PhylogeneticInferenceGenes(object):
                 markerIdToGeneIds[lineSplit[6]].add(lineSplit[0])
 
             genesInGenomes[genomeId] = markerIdToGeneIds
-            
+
         return genesInGenomes
-    
+
     def __fetchMarkerModels(self, universalMarkerGenes, outputModelDir):
-        print ''
-        print 'Grabbing HMMs for universal marker genes.'
+        print('')
+        print('Grabbing HMMs for universal marker genes.')
         markerIdToName = {}
         for line in open('/srv/whitlam/bio/db/pfam/27/Pfam-A.hmm'):
             if 'NAME' in line:
@@ -127,22 +130,22 @@ class PhylogeneticInferenceGenes(object):
                 os.system('hmmfetch -o ' + os.path.join(outputModelDir, markerId.replace('pfam', 'PF') + '.hmm') + ' /srv/whitlam/bio/db/pfam/27/Pfam-A.hmm ' + markerIdToName[markerId] + ' &> /dev/null')
             else:
                 os.system('hmmfetch -o ' + os.path.join(outputModelDir, markerId + '.hmm') + ' /srv/whitlam/bio/db/tigrfam/13.0/' + markerId + '.HMM ' + markerId + ' &> /dev/null')
-                
+
     def __alignMarkers(self, allTrustedGenomeIds, universalMarkerGenes, genesInGenomes, numThreads, outputGeneDir, outputModelDir):
         """Perform multithreaded alignment of marker genes using HMM align."""
-        
-        print ''
-        print 'Aligning gene sequences.'
-        
+
+        print('')
+        print('Aligning gene sequences.')
+
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
-        
+
         for _, markerId in enumerate(universalMarkerGenes):
             workerQueue.put(markerId)
-            
+
         for _ in range(numThreads):
             workerQueue.put(None)
-            
+
         calcProc = [mp.Process(target = self.__runHmmAlign, args = (allTrustedGenomeIds, genesInGenomes, outputGeneDir, outputModelDir, workerQueue, writerQueue)) for _ in range(numThreads)]
         writeProc = mp.Process(target = self.__reportThreads, args = (len(universalMarkerGenes), writerQueue))
 
@@ -156,15 +159,15 @@ class PhylogeneticInferenceGenes(object):
 
         writerQueue.put(None)
         writeProc.join()
-        
+
     def __runHmmAlign(self, allTrustedGenomeIds, genesInGenomes, outputGeneDir, outputModelDir, queueIn, queueOut):
         """Run each marker gene in a separate thread."""
-        
+
         while True:
-            markerId = queueIn.get(block=True, timeout=None) 
+            markerId = queueIn.get(block=True, timeout=None)
             if markerId == None:
-                break 
-            
+                break
+
             modelName = markerId
             if modelName.startswith('pfam'):
                 modelName = modelName.replace('pfam', 'PF')
@@ -178,13 +181,13 @@ class PhylogeneticInferenceGenes(object):
                     fout.write('>' + genomeId + '|' + geneId + '\n')
                     fout.write(seqs[geneId] + '\n')
             fout.close()
-            
+
             hmmer = HMMERRunner('align')
             hmmer.align(os.path.join(outputModelDir, modelName + '.hmm'), markerSeqFile, os.path.join(outputGeneDir, modelName + '.aln.faa'), trim=False, outputFormat='Pfam')
             self.__maskAlignment(os.path.join(outputGeneDir, modelName + '.aln.faa'), os.path.join(outputGeneDir, modelName + '.aln.masked.faa'))
-            
+
             queueOut.put(modelName)
-            
+
     def __reportThreads(self, numGenes, writerQueue):
         """Store confidence intervals (i.e., to shared memory)."""
 
@@ -193,14 +196,14 @@ class PhylogeneticInferenceGenes(object):
             markerId = writerQueue.get(block=True, timeout=None)
             if markerId == None:
                 break
-            
+
             numProcessedGenes += 1
             statusStr = '    Finished processing %d of %d (%.2f%%) marker genes.' % (numProcessedGenes, numGenes, float(numProcessedGenes)*100/numGenes)
             sys.stdout.write('%s\r' % statusStr)
             sys.stdout.flush()
-            
+
         sys.stdout.write('\n')
-            
+
     def __maskAlignment(self, inputFile, outputFile):
         """Read HMMER alignment in STOCKHOLM format and output masked alignment in FASTA format."""
         # read STOCKHOLM alignment
@@ -220,7 +223,7 @@ class PhylogeneticInferenceGenes(object):
         for seqId, seq in seqs.iteritems():
             fout.write('>' + seqId + '\n')
 
-            maskedSeq = ''.join([seq[i] for i in xrange(0, len(seq)) if mask[i] == 'x'])
+            maskedSeq = ''.join([seq[i] for i in range(0, len(seq)) if mask[i] == 'x'])
             fout.write(maskedSeq + '\n')
         fout.close()
 
@@ -228,7 +231,7 @@ class PhylogeneticInferenceGenes(object):
         # make sure output directory is empty
         if not os.path.exists(outputGeneDir):
             os.makedirs(outputGeneDir)
-            
+
         if not os.path.exists(outputModelDir):
             os.makedirs(outputModelDir)
 
@@ -238,7 +241,7 @@ class PhylogeneticInferenceGenes(object):
 
         # get universal marker genes
         allTrustedGenomeIds, universalMarkerGenes = self.__getUniversalMarkerGenes(phyloUbiquityThreshold, phyloSingleCopyThreshold, outputGeneDir)
-        
+
         # get mapping of marker ids to gene ids for each genome
         genesInGenomes = self.__genesInGenomes(allTrustedGenomeIds)
 
@@ -247,11 +250,11 @@ class PhylogeneticInferenceGenes(object):
 
         # align gene sequences and infer gene trees
         self.__alignMarkers(allTrustedGenomeIds, universalMarkerGenes, genesInGenomes, numThreads, outputGeneDir, outputModelDir)
-        
+
 if __name__ == '__main__':
-    print 'PhylogeneticInferenceGenes v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
-    
+    print('PhylogeneticInferenceGenes v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
+
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-x', '--phylo_ubiquity', help='ubiquity threshold for defining phylogenetic marker genes', type=float, default = 0.90)
     parser.add_argument('-y', '--phylo_single_copy', help='single-copy threshold for defining phylogenetic marker genes', type=float, default = 0.90)

@@ -17,6 +17,8 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 __prog_desc__ = 'infer genome tree from concatenation of genes'
 
 __author__ = 'Donovan Parks'
@@ -103,43 +105,43 @@ class InferGenomeTree(object):
             filteredSeqs[genomeIdI] = seqs[topHitId]
 
         return filteredSeqs
-    
+
     def __taxonomy(self, img, genomeIds, outputTaxonomy):
         metadata = img.genomeMetadata()
-        
+
         fout = open(outputTaxonomy, 'w')
         for genomeId in genomeIds:
             fout.write('IMG_' + genomeId + '\t')
             taxonomy = appendTaxonomyRanks(metadata[genomeId]['taxonomy'])
             taxonomy = [x.replace('unclassified', '') for x in taxonomy]
             fout.write('; '.join(taxonomy) + '\n')
-        
+
         fout.close()
 
     def run(self, geneTreeDir, alignmentDir, extension, outputAlignFile, outputTree, outputTaxonomy, bSupportValues = False):
         # read gene trees
-        print 'Reading gene trees.'
+        print('Reading gene trees.')
         geneIds = set()
         files = os.listdir(geneTreeDir)
         for f in files:
             if f.endswith('.tre'):
                 geneId = f[0:f.find('.')]
                 geneIds.add(geneId)
-                
+
         # write out genome tree taxonomy
-        print 'Reading trusted genomes.'
+        print('Reading trusted genomes.')
         img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         genomeIds = img.genomeMetadata().keys()
         self.__taxonomy(img, genomeIds, outputTaxonomy)
-        
-        print '  There are %d trusted genomes.' % (len(genomeIds))
-    
+
+        print('  There are %d trusted genomes.' % (len(genomeIds)))
+
         # get genes in genomes
-        print 'Reading all PFAM and TIGRFAM hits in trusted genomes.'
+        print('Reading all PFAM and TIGRFAM hits in trusted genomes.')
         genesInGenomes = self.__genesInGenomes(genomeIds)
 
         # read alignment files
-        print 'Reading alignment files.'
+        print('Reading alignment files.')
         alignments = {}
         genomeIds = set()
         files = os.listdir(alignmentDir)
@@ -147,7 +149,7 @@ class InferGenomeTree(object):
             geneId = f[0:f.find('.')]
             if f.endswith(extension) and geneId in geneIds:
                 seqs = readFasta(os.path.join(alignmentDir, f))
-                
+
                 imgGeneId = geneId
                 if imgGeneId.startswith('PF'):
                     imgGeneId = imgGeneId.replace('PF', 'pfam')
@@ -157,13 +159,13 @@ class InferGenomeTree(object):
                 alignments[geneId] = seqs
 
         # create concatenated alignment
-        print 'Concatenating alignments:'
+        print('Concatenating alignments:')
         concatenatedSeqs = {}
         totalAlignLen = 0
         for geneId in sorted(alignments.keys()):
             seqs = alignments[geneId]
             alignLen = len(seqs[seqs.keys()[0]])
-            print '  ' + str(geneId) + ',' + str(alignLen)
+            print('  ' + str(geneId) + ',' + str(alignLen))
             totalAlignLen += alignLen
             for genomeId in genomeIds:
                 if genomeId in seqs:
@@ -172,26 +174,26 @@ class InferGenomeTree(object):
                 else:
                     # missing gene
                     concatenatedSeqs['IMG_' + genomeId] = concatenatedSeqs.get('IMG_' + genomeId, '') + '-'*alignLen
-                    
-        print '  Total alignment length: ' + str(totalAlignLen)
+
+        print('  Total alignment length: ' + str(totalAlignLen))
 
         # save concatenated alignment
         writeFasta(concatenatedSeqs, outputAlignFile)
 
         # infer genome tree
-        print 'Inferring genome tree.'
+        print('Inferring genome tree.')
         outputLog = outputTree[0:outputTree.rfind('.')] + '.log'
-        
+
         supportStr = ' '
         if not bSupportValues:
             supportStr = ' -nosupport '
-        
+
         cmd = 'FastTreeMP' + supportStr + '-wag -gamma -log ' + outputLog + ' ' + outputAlignFile + ' > ' + outputTree
         os.system(cmd)
 
 if __name__ == '__main__':
-    print 'InferGenomeTree v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print('InferGenomeTree v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('gene_tree_dir', help='directory containing gene trees to use for phylogenetic inference')

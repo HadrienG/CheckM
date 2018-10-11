@@ -17,6 +17,8 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 """
 Identify genomes that differ substantially from the infer marker set.
 """
@@ -40,13 +42,13 @@ class IdentifyDegenerateGenomes(object):
         pass
 
     def run(self, ubiquityThreshold, singleCopyThreshold, minGenomes, mostSpecificRank, minMarkers, completenessThreshold, contaminationThreshold):
-        print 'Ubiquity threshold: ' + str(ubiquityThreshold)
-        print 'Single-copy threshold: ' + str(singleCopyThreshold)
-        print 'Min. genomes: ' + str(minGenomes)
-        print 'Most specific taxonomic rank: ' + str(mostSpecificRank)
-        print 'Min markers: ' + str(minMarkers)
-        print 'Completeness threshold: ' + str(completenessThreshold)
-        print 'Contamination threshold: ' + str(contaminationThreshold)
+        print('Ubiquity threshold: ' + str(ubiquityThreshold))
+        print('Single-copy threshold: ' + str(singleCopyThreshold))
+        print('Min. genomes: ' + str(minGenomes))
+        print('Most specific taxonomic rank: ' + str(mostSpecificRank))
+        print('Min markers: ' + str(minMarkers))
+        print('Completeness threshold: ' + str(completenessThreshold))
+        print('Contamination threshold: ' + str(contaminationThreshold))
 
         img = IMG()
         markerset = MarkerSet()
@@ -57,8 +59,8 @@ class IdentifyDegenerateGenomes(object):
         for lineage in lineages:
             genomeIds = img.genomeIdsByTaxonomy(lineage, 'Final')
 
-            print ''
-            print 'Lineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.'
+            print('')
+            print('Lineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.')
 
             # get table of PFAMs and do some initial filtering to remove PFAMs that are
             # clearly not going to pass the ubiquity and single-copy thresholds

@@ -17,6 +17,9 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+from builtins import range
+
 """
 Calculate marker set for varying lineages under a leave-one-out scheme.
 """
@@ -42,10 +45,10 @@ class MarkerSetLOO(object):
         pass
 
     def run(self, ubiquityThreshold, singleCopyThreshold, minGenomes, mostSpecificRank, minMarkers):
-        print 'Ubiquity threshold: ' + str(ubiquityThreshold)
-        print 'Single-copy threshold: ' + str(singleCopyThreshold)
-        print 'Min. genomes: ' + str(minGenomes)
-        print 'Most specific taxonomic rank: ' + str(mostSpecificRank)
+        print('Ubiquity threshold: ' + str(ubiquityThreshold))
+        print('Single-copy threshold: ' + str(singleCopyThreshold))
+        print('Min. genomes: ' + str(minGenomes))
+        print('Most specific taxonomic rank: ' + str(mostSpecificRank))
 
         img = IMG()
 
@@ -60,8 +63,8 @@ class MarkerSetLOO(object):
             trusted = img.trustedGenomes()
             genomeIds = list(genomeIds.intersection(trusted))
 
-            print ''
-            print 'Lineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.'
+            print('')
+            print('Lineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.')
 
             # get table of PFAMs and do some initial filtering to remove PFAMs that are
             # clearly not going to pass the ubiquity and single-copy thresholds
@@ -79,7 +82,7 @@ class MarkerSetLOO(object):
             deltaMarkerSetSize = []
             numGenomes = len(genomeIds)-1
 
-            for loo in xrange(0, len(genomeIds)):
+            for loo in range(0, len(genomeIds)):
                 if loo != len(genomeIds) - 1:
                     genomeIdSubset = genomeIds[0:loo] + genomeIds[loo+1:]
                 else:
@@ -89,16 +92,16 @@ class MarkerSetLOO(object):
                 deltaMarkerSetSize.append(fullMarkerSetSize - len(markerSet))
 
                 if fullMarkerSetSize < len(markerSet):
-                    print '[Warning] Unexpected!'
+                    print('[Warning] Unexpected!')
 
             deltaMarkerSetSizes.append(deltaMarkerSetSize)
 
             m = mean(deltaMarkerSetSize)
             s = std(deltaMarkerSetSize)
 
-            print '  LOO Ubiquity >= ' + str(int(ubiquityThreshold*numGenomes)) + ', LOO Single-copy >= ' + str(int(singleCopyThreshold*numGenomes))
-            print '  Delta Mean: %.2f +/- %.2f' % (m, s)
-            print '  Delta Min: %d, Delta Max: %d' % (min(deltaMarkerSetSize), max(deltaMarkerSetSize))
+            print('  LOO Ubiquity >= ' + str(int(ubiquityThreshold*numGenomes)) + ', LOO Single-copy >= ' + str(int(singleCopyThreshold*numGenomes)))
+            print('  Delta Mean: %.2f +/- %.2f' % (m, s))
+            print('  Delta Min: %d, Delta Max: %d' % (min(deltaMarkerSetSize), max(deltaMarkerSetSize)))
 
         # plot data
         boxPlot = BoxPlot()

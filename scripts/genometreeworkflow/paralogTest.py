@@ -17,6 +17,9 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+from builtins import range
+
 __prog_desc__ = 'determine if paralogous genes are conspecific'
 
 __author__ = 'Donovan Parks'
@@ -40,28 +43,28 @@ from rerootTree import RerootTree
 class ParalogTest(object):
     def __init__(self):
         pass
-    
+
     def __patristicDist(self, tree, taxa1, taxa2):
         mrca = tree.mrca(taxon_labels=[taxa1.taxon.label, taxa2.taxon.label])
-        
+
         if mrca.parent_node == None:
             # MRCA is the root of the tree
             return taxa1.distance_from_root() + taxa2.distance_from_root()
         else:
-        
+
             dist = taxa1.edge_length
             parentNode = taxa1.parent_node
-            while parentNode != mrca:                  
-                dist += parentNode.edge_length    
-                parentNode = parentNode.parent_node
-    
-                
-            dist += taxa2.edge_length
-            parentNode = taxa2.parent_node
-            while parentNode != mrca:                  
+            while parentNode != mrca:
                 dist += parentNode.edge_length
                 parentNode = parentNode.parent_node
-                
+
+
+            dist += taxa2.edge_length
+            parentNode = taxa2.parent_node
+            while parentNode != mrca:
+                dist += parentNode.edge_length
+                parentNode = parentNode.parent_node
+
             return dist
 
     def run(self, geneTreeDir, acceptPer, extension, outputDir):
@@ -77,7 +80,7 @@ class ParalogTest(object):
         metadata = img.genomeMetadata()
 
         files = os.listdir(geneTreeDir)
-        print 'Identifying gene trees with only conspecific paralogous genes:'
+        print('Identifying gene trees with only conspecific paralogous genes:')
         filteredGeneTrees = 0
         retainedGeneTrees = 0
         for f in files:
@@ -85,18 +88,18 @@ class ParalogTest(object):
                 continue
 
             geneId = f[0:f.find('.')]
-            print '  Testing gene tree: ' + geneId
+            print('  Testing gene tree: ' + geneId)
 
             tree = dendropy.Tree.get_from_path(os.path.join(geneTreeDir, f), schema='newick', as_rooted=False, preserve_underscores=True)
 
             taxa = tree.leaf_nodes()
             numTaxa = len(taxa)
-            print '  Genes in tree: ' + str(numTaxa)
+            print('  Genes in tree: ' + str(numTaxa))
 
             # root tree with archaeal genomes
             rerootTree = RerootTree()
             rerootTree.reroot(tree)
-            
+
             # get species name of each taxa
             leafNodeToSpeciesName = {}
             for t in taxa:
@@ -105,14 +108,14 @@ class ParalogTest(object):
                 sp = metadata[genomeId]['taxonomy'][6].lower()
 
                 leafNodeToSpeciesName[t.taxon.label] = genus + ' ' + sp
-                
+
             # find all paralogous genes
-            print '  Finding paralogous genes.'
+            print('  Finding paralogous genes.')
 
             paralogs = defaultdict(set)
-            for i in xrange(0, len(taxa)):
+            for i in range(0, len(taxa)):
                 genomeId = taxa[i].taxon.label.split('|')[0]
-                for j in xrange(i+1, len(taxa)):
+                for j in range(i+1, len(taxa)):
                     # genes from the same genome are paralogs, but we filter out
                     # those that are identical (distance of 0 on the tree) to
                     # speed up computation and because these clearly do not
@@ -120,11 +123,11 @@ class ParalogTest(object):
                     if genomeId == taxa[j].taxon.label.split('|')[0] and self.__patristicDist(tree, taxa[i], taxa[j]) > 0:
                         paralogs[genomeId].add(taxa[i].taxon.label)
                         paralogs[genomeId].add(taxa[j].taxon.label)
-                        
-            print '    Paralogous genes: ' + str(len(paralogs))
+
+            print('    Paralogous genes: ' + str(len(paralogs)))
 
             # check if paralogous genes are conspecific
-            print '  Determining if paralogous genes are conspecific.'
+            print('  Determining if paralogous genes are conspecific.')
             nonConspecificGenomes = []
             for genomeId, taxaLabels in paralogs.iteritems():
                 lcaNode = tree.mrca(taxon_labels = taxaLabels)
@@ -144,25 +147,25 @@ class ParalogTest(object):
 
             if len(nonConspecificGenomes) > acceptPer*numTaxa:
                 filteredGeneTrees += 1
-                print '  Tree is not conspecific for the following genome: ' + str(nonConspecificGenomes)
+                print('  Tree is not conspecific for the following genome: ' + str(nonConspecificGenomes))
             else:
                 retainedGeneTrees += 1
 
                 if len(nonConspecificGenomes) > 1:
-                    print '  An acceptable number of genomes are not conspecific: ' + str(nonConspecificGenomes)
+                    print('  An acceptable number of genomes are not conspecific: ' + str(nonConspecificGenomes))
                 else:
-                    print '  Tree is conspecific.'
+                    print('  Tree is conspecific.')
 
                 os.system('cp ' + os.path.join(geneTreeDir, f) + ' ' + os.path.join(outputDir, f))
 
-            print ''
+            print('')
 
-        print 'Filtered gene trees: ' + str(filteredGeneTrees)
-        print 'Retained gene trees: ' + str(retainedGeneTrees)
+        print('Filtered gene trees: ' + str(filteredGeneTrees))
+        print('Retained gene trees: ' + str(retainedGeneTrees))
 
 if __name__ == '__main__':
-    print 'ParalogTest v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print('ParalogTest v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('gene_tree_dir', help='directory containing gene trees to test')

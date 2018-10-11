@@ -17,9 +17,12 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+from builtins import range
+
 """
-Assess performance of marker sets under different conditions on draft genomes 
-  composed of several scaffolds that are sampled with a probability 
+Assess performance of marker sets under different conditions on draft genomes
+  composed of several scaffolds that are sampled with a probability
   proportional to length.
 """
 
@@ -54,11 +57,11 @@ class SimulationScaffolds(object):
     def __init__(self):
         self.markerSetBuilder = MarkerSetBuilder()
         self.img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
-        
+
         self.contigLens = [5000, 20000, 50000]
         self.percentComps = [0.5, 0.7, 0.8, 0.9, 0.95, 1.0]
         self.percentConts = [0.0, 0.05, 0.1, 0.15, 0.2]
-        
+
     def __seqLens(self, seqs):
         """Calculate lengths of seqs."""
         genomeSize = 0
@@ -66,9 +69,9 @@ class SimulationScaffolds(object):
         for seqId, seq in seqs.iteritems():
             seqLens[seqId] = len(seq)
             genomeSize += len(seq)
-    
+
         return seqLens, genomeSize
-    
+
     def __workerThread(self, tree, metadata, genomeIdsToTest, ubiquityThreshold, singleCopyThreshold, numReplicates, queueIn, queueOut):
         """Process each data item in parallel."""
 
@@ -76,71 +79,71 @@ class SimulationScaffolds(object):
             testGenomeId = queueIn.get(block=True, timeout=None)
             if testGenomeId == None:
                 break
-                        
+
             # build marker sets for evaluating test genome
             testNode = tree.find_node_with_taxon_label('IMG_' + testGenomeId)
             binMarkerSets, refinedBinMarkerSet = self.markerSetBuilder.buildBinMarkerSet(tree, testNode.parent_node, ubiquityThreshold, singleCopyThreshold, bMarkerSet = True, genomeIdsToRemove = [testGenomeId])
 
             # determine distribution of all marker genes within the test genome
             geneDistTable = self.img.geneDistTable([testGenomeId], binMarkerSets.getMarkerGenes(), spacingBetweenContigs=0)
-                
+
             # estimate completeness of unmodified genome
             unmodifiedComp = {}
             unmodifiedCont = {}
-            for ms in binMarkerSets.markerSetIter():     
+            for ms in binMarkerSets.markerSetIter():
                 hits = {}
                 for mg in ms.getMarkerGenes():
                     if mg in geneDistTable[testGenomeId]:
                         hits[mg] = geneDistTable[testGenomeId][mg]
-                completeness, contamination = ms.genomeCheck(hits, bIndividualMarkers=True) 
+                completeness, contamination = ms.genomeCheck(hits, bIndividualMarkers=True)
                 unmodifiedComp[ms.lineageStr] = completeness
                 unmodifiedCont[ms.lineageStr] = contamination
 
-            # estimate completion and contamination of genome after subsampling using both the domain and lineage-specific marker sets 
+            # estimate completion and contamination of genome after subsampling using both the domain and lineage-specific marker sets
             testSeqs = readFasta(os.path.join(self.img.genomeDir, testGenomeId, testGenomeId + '.fna'))
             testSeqLens, genomeSize = self.__seqLens(testSeqs)
-            
-            
-            for contigLen in self.contigLens: 
+
+
+            for contigLen in self.contigLens:
                 for percentComp in self.percentComps:
                     for percentCont in self.percentConts:
                         deltaComp = defaultdict(list)
                         deltaCont = defaultdict(list)
                         deltaCompSet = defaultdict(list)
                         deltaContSet = defaultdict(list)
-                        
+
                         deltaCompRefined = defaultdict(list)
                         deltaContRefined = defaultdict(list)
                         deltaCompSetRefined = defaultdict(list)
                         deltaContSetRefined = defaultdict(list)
-                        
+
                         trueComps = []
                         trueConts = []
-                        
+
                         numDescendants = {}
-            
-                        for i in xrange(0, numReplicates):
-                            # generate test genome with a specific level of completeness, by randomly sampling scaffolds to remove 
+
+                        for i in range(0, numReplicates):
+                            # generate test genome with a specific level of completeness, by randomly sampling scaffolds to remove
                             # with a percentage inversely proportional to length
                             sampledSeqIdsToRemove, perGenomeRemoved = self.markerSetBuilder.sampleGenomeScaffoldsInvLength(1.0-percentComp, testSeqLens, genomeSize)
-                            
+
                             trueComp = 100.0 - perGenomeRemoved
                             trueComps.append(trueComp)
-                            
+
                             retainedTestSeqs = []
                             for seqId in testSeqs:
                                 if seqId not in sampledSeqIdsToRemove:
                                     retainedTestSeqs.append(seqId)
-                                    
+
                             # select a random genome to use as a source of contamination
                             contGenomeId = random.sample(genomeIdsToTest - set([testGenomeId]), 1)[0]
                             contSeqs = readFasta(os.path.join(self.img.genomeDir, contGenomeId, contGenomeId + '.fna'))
-                            contSeqLens, contGenomeSize = self.__seqLens(contSeqs) 
-                            contSampledSeqIds, trueCont = self.markerSetBuilder.sampleGenomeScaffoldsInvLength(percentCont, contSeqLens, contGenomeSize) 
-                            
+                            contSeqLens, contGenomeSize = self.__seqLens(contSeqs)
+                            contSampledSeqIds, trueCont = self.markerSetBuilder.sampleGenomeScaffoldsInvLength(percentCont, contSeqLens, contGenomeSize)
+
                             trueConts.append(trueCont)
-              
-                            for ms in binMarkerSets.markerSetIter():  
+
+                            for ms in binMarkerSets.markerSetIter():
                                 numDescendants[ms.lineageStr] = ms.numGenomes
                                 containedMarkerGenes= defaultdict(list)
                                 self.markerSetBuilder.markerGenesOnScaffolds(ms.getMarkerGenes(), testGenomeId, retainedTestSeqs, containedMarkerGenes)
@@ -149,30 +152,30 @@ class SimulationScaffolds(object):
                                 completeness, contamination = ms.genomeCheck(containedMarkerGenes, bIndividualMarkers=True)
                                 deltaComp[ms.lineageStr].append(completeness - trueComp)
                                 deltaCont[ms.lineageStr].append(contamination - trueCont)
-                                
+
                                 completeness, contamination = ms.genomeCheck(containedMarkerGenes, bIndividualMarkers=False)
                                 deltaCompSet[ms.lineageStr].append(completeness - trueComp)
                                 deltaContSet[ms.lineageStr].append(contamination - trueCont)
-                                
-                            for ms in refinedBinMarkerSet.markerSetIter():  
+
+                            for ms in refinedBinMarkerSet.markerSetIter():
                                 containedMarkerGenes= defaultdict(list)
                                 self.markerSetBuilder.markerGenesOnScaffolds(ms.getMarkerGenes(), testGenomeId, retainedTestSeqs, containedMarkerGenes)
                                 self.markerSetBuilder.markerGenesOnScaffolds(ms.getMarkerGenes(), contGenomeId, contSampledSeqIds, containedMarkerGenes)
-                                
+
                                 completeness, contamination = ms.genomeCheck(containedMarkerGenes, bIndividualMarkers=True)
                                 deltaCompRefined[ms.lineageStr].append(completeness - trueComp)
                                 deltaContRefined[ms.lineageStr].append(contamination - trueCont)
-                                
+
                                 completeness, contamination = ms.genomeCheck(containedMarkerGenes, bIndividualMarkers=False)
                                 deltaCompSetRefined[ms.lineageStr].append(completeness - trueComp)
                                 deltaContSetRefined[ms.lineageStr].append(contamination - trueCont)
-                                
+
                         taxonomy = ';'.join(metadata[testGenomeId]['taxonomy'])
                         queueOut.put((testGenomeId, contigLen, percentComp, percentCont, taxonomy, numDescendants, unmodifiedComp, unmodifiedCont, deltaComp, deltaCont, deltaCompSet, deltaContSet, deltaCompRefined, deltaContRefined, deltaCompSetRefined, deltaContSetRefined, trueComps, trueConts))
-            
+
     def __writerThread(self, numTestGenomes, writerQueue):
         """Store or write results of worker threads in a single thread."""
-        
+
         summaryOut = open('/tmp/simulation.scaffolds.draft.summary.w_refinement_50.tsv', 'w')
         summaryOut.write('Genome Id\tContig len\t% comp\t% cont')
         summaryOut.write('\tTaxonomy\tMarker set\t# descendants')
@@ -181,7 +184,7 @@ class SimulationScaffolds(object):
         summaryOut.write('\tMS comp\tMS comp std\tMS cont\tMS cont std')
         summaryOut.write('\tRIM comp\tRIM comp std\tRIM cont\tRIM cont std')
         summaryOut.write('\tRMS comp\tRMS comp std\tRMS cont\tRMS cont std\n')
-        
+
         fout = gzip.open('/tmp/simulation.scaffolds.draft.w_refinement_50.tsv.gz', 'wb')
         fout.write('Genome Id\tContig len\t% comp\t% cont')
         fout.write('\tTaxonomy\tMarker set\t# descendants')
@@ -190,7 +193,7 @@ class SimulationScaffolds(object):
         fout.write('\tMS comp\tMS cont')
         fout.write('\tRIM comp\tRIM cont')
         fout.write('\tRMS comp\tRMS cont\tTrue Comp\tTrue Cont\n')
-        
+
         testsPerGenome = len(self.contigLens) * len(self.percentComps) * len(self.percentConts)
 
         itemsProcessed = 0
@@ -203,9 +206,9 @@ class SimulationScaffolds(object):
             statusStr = '    Finished processing %d of %d (%.2f%%) test cases.' % (itemsProcessed, numTestGenomes*testsPerGenome, float(itemsProcessed)*100/(numTestGenomes*testsPerGenome))
             sys.stdout.write('%s\r' % statusStr)
             sys.stdout.flush()
-            
+
             for markerSetId in unmodifiedComp:
-                summaryOut.write(testGenomeId + '\t%d\t%.2f\t%.2f' % (contigLen, percentComp, percentCont)) 
+                summaryOut.write(testGenomeId + '\t%d\t%.2f\t%.2f' % (contigLen, percentComp, percentCont))
                 summaryOut.write('\t' + taxonomy + '\t' + markerSetId + '\t' + str(numDescendants[markerSetId]))
                 summaryOut.write('\t%.3f\t%.3f' % (unmodifiedComp[markerSetId], unmodifiedCont[markerSetId]))
                 summaryOut.write('\t%.3f\t%.3f' % (mean(abs(deltaComp[markerSetId])), std(abs(deltaComp[markerSetId]))))
@@ -217,8 +220,8 @@ class SimulationScaffolds(object):
                 summaryOut.write('\t%.3f\t%.3f' % (mean(abs(deltaCompSetRefined[markerSetId])), std(abs(deltaCompSetRefined[markerSetId]))))
                 summaryOut.write('\t%.3f\t%.3f' % (mean(abs(deltaContSetRefined[markerSetId])), std(abs(deltaContSetRefined[markerSetId]))))
                 summaryOut.write('\n')
-                
-                fout.write(testGenomeId + '\t%d\t%.2f\t%.2f' % (contigLen, percentComp, percentCont)) 
+
+                fout.write(testGenomeId + '\t%d\t%.2f\t%.2f' % (contigLen, percentComp, percentCont))
                 fout.write('\t' + taxonomy + '\t' + markerSetId + '\t' + str(numDescendants[markerSetId]))
                 fout.write('\t%.3f\t%.3f' % (unmodifiedComp[markerSetId], unmodifiedCont[markerSetId]))
                 fout.write('\t%s' % ','.join(map(str, deltaComp[markerSetId])))
@@ -232,7 +235,7 @@ class SimulationScaffolds(object):
                 fout.write('\t%s' % ','.join(map(str, trueComps)))
                 fout.write('\t%s' % ','.join(map(str, trueConts)))
                 fout.write('\n')
-            
+
         summaryOut.close()
         fout.close()
 
@@ -240,61 +243,61 @@ class SimulationScaffolds(object):
 
     def run(self, ubiquityThreshold, singleCopyThreshold, numReplicates, minScaffolds, numThreads):
         random.seed(0)
-          
-        print '\n  Reading reference genome tree.'
+
+        print('\n  Reading reference genome tree.')
         treeFile = os.path.join('/srv', 'db', 'checkm', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
-        
-        print '    Number of taxa in tree: %d' % (len(tree.leaf_nodes()))
-        
+
+        print('    Number of taxa in tree: %d' % (len(tree.leaf_nodes())))
+
         genomesInTree = set()
         for leaf in tree.leaf_iter():
             genomesInTree.add(leaf.taxon.label.replace('IMG_', ''))
 
         # get all draft genomes consisting of a user-specific minimum number of scaffolds
-        print ''
+        print('')
         metadata = self.img.genomeMetadata()
-        print '  Total genomes: %d' % len(metadata)
-        
+        print('  Total genomes: %d' % len(metadata))
+
         draftGenomeIds = genomesInTree - self.img.filterGenomeIds(genomesInTree, metadata, 'status', 'Finished')
-        print '  Number of draft genomes: %d' % len(draftGenomeIds)
-        
+        print('  Number of draft genomes: %d' % len(draftGenomeIds))
+
         genomeIdsToTest = set()
         for genomeId in draftGenomeIds:
             if metadata[genomeId]['scaffold count'] >= minScaffolds:
                 genomeIdsToTest.add(genomeId)
-        print '  Number of draft genomes with >= %d scaffolds: %d' % (minScaffolds, len(genomeIdsToTest))
+        print('  Number of draft genomes with >= %d scaffolds: %d' % (minScaffolds, len(genomeIdsToTest)))
 
-        print ''
-        print '  Pre-computing genome information for calculating marker sets:'
+        print('')
+        print('  Pre-computing genome information for calculating marker sets:')
         start = time.time()
         self.markerSetBuilder.readLineageSpecificGenesToRemove()
         end = time.time()
-        print '    readLineageSpecificGenesToRemove: %.2f' % (end - start)
-        
+        print('    readLineageSpecificGenesToRemove: %.2f' % (end - start))
+
         start = time.time()
         self.markerSetBuilder.precomputeGenomeFamilyScaffolds(metadata.keys())
         end = time.time()
-        print '    precomputeGenomeFamilyScaffolds: %.2f' % (end - start)
-        
+        print('    precomputeGenomeFamilyScaffolds: %.2f' % (end - start))
+
         start = time.time()
         self.markerSetBuilder.cachedGeneCountTable = self.img.geneCountTable(metadata.keys())
         end = time.time()
-        print '    globalGeneCountTable: %.2f' % (end - start)
-        
+        print('    globalGeneCountTable: %.2f' % (end - start))
+
         start = time.time()
         self.markerSetBuilder.precomputeGenomeSeqLens(metadata.keys())
         end = time.time()
-        print '    precomputeGenomeSeqLens: %.2f' % (end - start)
-        
+        print('    precomputeGenomeSeqLens: %.2f' % (end - start))
+
         start = time.time()
         self.markerSetBuilder.precomputeGenomeFamilyPositions(metadata.keys(), 0)
         end = time.time()
-        print '    precomputeGenomeFamilyPositions: %.2f' % (end - start)
-             
-        print ''    
-        print '  Evaluating %d test genomes.' % len(genomeIdsToTest)
-            
+        print('    precomputeGenomeFamilyPositions: %.2f' % (end - start))
+
+        print('')
+        print('  Evaluating %d test genomes.' % len(genomeIdsToTest))
+
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
 
@@ -317,7 +320,7 @@ class SimulationScaffolds(object):
 
         writerQueue.put((None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None))
         writeProc.join()
- 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 

@@ -17,6 +17,8 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 """
 Gather all marker gene HMMs into a single model file.
 """
@@ -48,53 +50,53 @@ class GetMarkerGeneHMMs(object):
 
     def run(self):
         # read all taxonomic-specific marker genes
-        print 'Reading taxonomic-specific marker genes.'
+        print('Reading taxonomic-specific marker genes.')
         taxonomicMarkers = set()
         taxonParser = TaxonParser()
         taxonMarkerSets = taxonParser.readMarkerSets()
         for _, taxa in taxonMarkerSets.iteritems():
             for _, markerSet in taxa.iteritems():
                 taxonomicMarkers = taxonomicMarkers.union(markerSet.getMarkerGenes())
-                
-        print '  Taxonomic-specific marker genes: %d' % len(taxonomicMarkers)
-                
+
+        print('  Taxonomic-specific marker genes: %d' % len(taxonomicMarkers))
+
         # read all lineage-specific marker genes
-        print 'Reading lineage-specific marker genes.'
+        print('Reading lineage-specific marker genes.')
         lineageMarkers = set()
         treeParser = TreeParser()
         uniqueIdToLineageStatistics = treeParser.readNodeMetadata()
         for uniqueId, d in uniqueIdToLineageStatistics.iteritems():
             markerSet = MarkerSet(uniqueId, 'NA', int(d['# genomes']), eval(d['marker set']))
             lineageMarkers = lineageMarkers.union(markerSet.getMarkerGenes())
-            
-        print '  Lineage-specific marker genes: %d' % len(lineageMarkers)
-        
+
+        print('  Lineage-specific marker genes: %d' % len(lineageMarkers))
+
         # gather all marker genes
         markerGenes = taxonomicMarkers.union(lineageMarkers)
-        print '  Total marker genes: %d' % len(markerGenes)
-        
+        print('  Total marker genes: %d' % len(markerGenes))
+
         # get genes from same clan as marker genes
-        print 'Gathering HMMs from the same clan as marker genes.'
+        print('Gathering HMMs from the same clan as marker genes.')
         pfam = PFAM()
         genesInSameClan = pfam.genesInSameClan(markerGenes)
         allMarkers = markerGenes.union(genesInSameClan)
-        
+
         # create file with all model accession numbers
         keyFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         fout = open(keyFile, 'w')
         for modelAcc in allMarkers:
             fout.write(modelAcc + '\n')
         fout.close()
-        
+
         # fetch specified models
         HF = HMMERRunner(mode='fetch')
         HF.fetch(self.hmms, keyFile, self.outputHMMs, bKeyFile=True)
-        
+
         # index the HMM file
         if os.path.exists(self.outputHMMs + '.ssi'):
             os.remove(self.outputHMMs + '.ssi')
         HF.index(self.outputHMMs)
-        
+
         # remove key file
         os.remove(keyFile)
 

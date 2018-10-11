@@ -19,9 +19,11 @@
 #                                                                             #
 ###############################################################################
 
+from builtins import range
+
 import numpy as np
 
-from AbstractPlot import AbstractPlot
+from .AbstractPlot import AbstractPlot
 
 from checkm.util.seqUtils import readFasta
 from checkm.common import readDistribution, findNearest
@@ -144,8 +146,8 @@ class TetraDistPlots(AbstractPlot):
 
             # make sure x-values are strictly decreasing as y increases
             # as this is conservative and visually satisfying
-            for i in xrange(0, len(x) - 1):
-                for j in xrange(i + 1, len(x)):
+            for i in range(0, len(x) - 1):
+                for j in range(i + 1, len(x)):
                     if x[j] > x[i]:
                         if j == len(x) - 1:
                             x[j] = x[i]

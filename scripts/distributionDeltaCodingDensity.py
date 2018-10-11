@@ -22,6 +22,8 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 import sys
 import os
 import argparse
@@ -129,7 +131,7 @@ class DeltaCodingDensity(object):
 
     def run(self, metadataFile, genomeDir, numWindows, numThreads):
         # read metadata file
-        print 'Determining finished prokaryotic reference genomes.'
+        print('Determining finished prokaryotic reference genomes.')
         genomeIds = []
         bHeader = True
         for line in open(metadataFile):
@@ -147,7 +149,7 @@ class DeltaCodingDensity(object):
                 if os.path.exists(os.path.join(genomeDir, genomeId, genomeId + '.fna')):
                     genomeIds.append(genomeId)
 
-        print '  Identified reference genomes: ' + str(len(genomeIds))
+        print('  Identified reference genomes: ' + str(len(genomeIds)))
 
         # window sizes to sample
         windowSizes = [ws for ws in np.arange(500, 1000, 100)]
@@ -159,7 +161,7 @@ class DeltaCodingDensity(object):
         windowSizes += [ws for ws in np.arange(100000, 400000, 100000)]
         windowSizes += [ws for ws in np.arange(400000, 1000001, 200000)]
 
-        print '# window sizes: ' + str(len(windowSizes))
+        print('# window sizes: ' + str(len(windowSizes)))
 
         # sample windows from each genome
         workerQueue = mp.Queue()

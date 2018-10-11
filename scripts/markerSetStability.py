@@ -17,8 +17,11 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+from builtins import range
+
 """
-Use 'add-one-more' analysis to assess stability of marker sets for varying 
+Use 'add-one-more' analysis to assess stability of marker sets for varying
   numbers of reference genomes.
 """
 
@@ -49,41 +52,41 @@ class MarkerSetStability(object):
     def __processLineage(self, metadata, ubiquityThreshold, singleCopyThreshold, minGenomes, queueIn, queueOut):
         """Assess stability of marker set for a specific named taxonomic group."""
         while True:
-            lineage = queueIn.get(block=True, timeout=None) 
+            lineage = queueIn.get(block=True, timeout=None)
             if lineage == None:
-                break  
-            
+                break
+
             genomeIds = self.img.genomeIdsByTaxonomy(lineage, metadata, 'trusted')
-            
+
             changeMarkerSetSize = {}
             markerGenes = []
-            if len(genomeIds) >= minGenomes:  
-                # calculate marker set for all genomes in lineage          
+            if len(genomeIds) >= minGenomes:
+                # calculate marker set for all genomes in lineage
                 geneCountTable = self.img.geneCountTable(genomeIds)
                 markerGenes = self.markerset.markerGenes(genomeIds, geneCountTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
                 tigrToRemove = self.img.identifyRedundantTIGRFAMs(markerGenes)
                 markerGenes = markerGenes - tigrToRemove
-     
-                for selectPer in xrange(50, 101, 5):
+
+                for selectPer in range(50, 101, 5):
                     numGenomesToSelect = int(float(selectPer)/100 * len(genomeIds))
                     perChange = []
-                    for _ in xrange(0, 10):
+                    for _ in range(0, 10):
                         # calculate marker set for subset of genomes
                         subsetGenomeIds = random.sample(genomeIds, numGenomesToSelect)
                         geneCountTable = self.img.geneCountTable(subsetGenomeIds)
                         subsetMarkerGenes = self.markerset.markerGenes(subsetGenomeIds, geneCountTable, ubiquityThreshold*numGenomesToSelect, singleCopyThreshold*numGenomesToSelect)
                         tigrToRemove = self.img.identifyRedundantTIGRFAMs(subsetMarkerGenes)
                         subsetMarkerGenes = subsetMarkerGenes - tigrToRemove
-    
+
                         perChange.append(float(len(markerGenes.symmetric_difference(subsetMarkerGenes)))*100.0 / len(markerGenes))
-    
-                    changeMarkerSetSize[selectPer] = [mean(perChange), std(perChange)]  
+
+                    changeMarkerSetSize[selectPer] = [mean(perChange), std(perChange)]
 
             queueOut.put((lineage, len(genomeIds), len(markerGenes), changeMarkerSetSize))
 
     def __storeResults(self, outputFile, totalLineages, writerQueue):
         """Store results to file."""
-        
+
         fout = open(outputFile, 'w')
         fout.write('Lineage\t# genomes\t# markers\tsubsample %\tmean % change\tstd % change\n')
 
@@ -92,34 +95,34 @@ class MarkerSetStability(object):
             lineage, numGenomes, numMarkerGenes, changeMarkerSetSize = writerQueue.get(block=True, timeout=None)
             if lineage == None:
                 break
-                    
+
             numProcessedLineages += 1
             statusStr = '    Finished processing %d of %d (%.2f%%) lineages.' % (numProcessedLineages, totalLineages, float(numProcessedLineages)*100/totalLineages)
             sys.stdout.write('%s\r' % statusStr)
             sys.stdout.flush()
-            
-            for selectPer in sorted(changeMarkerSetSize.keys()): 
+
+            for selectPer in sorted(changeMarkerSetSize.keys()):
                 fout.write('%s\t%d\t%d\t%d\t%f\t%f\n' % (lineage, numGenomes, numMarkerGenes, selectPer, changeMarkerSetSize[selectPer][0], changeMarkerSetSize[selectPer][1]))
 
         sys.stdout.write('\n')
-            
+
         fout.close()
-        
-        
+
+
     def run(self, outputFile, ubiquityThreshold, singleCopyThreshold, minGenomes, mostSpecificRank, numThreads):
-        """Calculate stability of marker sets for named taxonomic groups."""  
-        
-        print '  Calculating stability of marker sets:'
-        
+        """Calculate stability of marker sets for named taxonomic groups."""
+
+        print('  Calculating stability of marker sets:')
+
         random.seed(1)
-        
+
         # process each sequence in parallel
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
 
         metadata = self.img.genomeMetadata()
         lineages = self.img.lineagesByCriteria(metadata, minGenomes, mostSpecificRank)
-        
+
         #lineages = ['Bacteria']
         #lineages += ['Bacteria;Proteobacteria']
         #lineages += ['Bacteria;Proteobacteria;Gammaproteobacteria']
@@ -127,7 +130,7 @@ class MarkerSetStability(object):
         #lineages += ['Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacteriales;Enterobacteriaceae']
         #lineages += ['Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacteriales;Enterobacteriaceae;Escherichia']
         #lineages += ['Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacteriales;Enterobacteriaceae;Escherichia;coli']
-        
+
         #lineages = ['Archaea']
         #lineages += ['Archaea;Euryarchaeota']
         #lineages += ['Archaea;Euryarchaeota;Methanomicrobia']
@@ -139,7 +142,7 @@ class MarkerSetStability(object):
 
         for _ in range(numThreads):
             workerQueue.put(None)
- 
+
         calcProc = [mp.Process(target = self.__processLineage, args = (metadata, ubiquityThreshold, singleCopyThreshold, minGenomes, workerQueue, writerQueue)) for _ in range(numThreads)]
         writeProc = mp.Process(target = self.__storeResults, args = (outputFile, len(lineages), writerQueue))
 

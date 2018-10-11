@@ -19,12 +19,15 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+from builtins import range
+
 import logging
 
-import prettytable
+import checkm.prettytable as prettytable
 
 from checkm.defaultValues import DefaultValues
-from common import checkFileExists, reassignStdOut, restoreStdOut
+from .common import checkFileExists, reassignStdOut, restoreStdOut
 
 
 class Profile():
@@ -58,7 +61,7 @@ class Profile():
             if binId not in readsMappedToBin:
                 readsMappedToBin[binId] = {}
 
-            for i in xrange(3, len(lineSplit), 3):
+            for i in range(3, len(lineSplit), 3):
                 bamId = lineSplit[i]
                 mappedReads = int(lineSplit[i + 2])
 

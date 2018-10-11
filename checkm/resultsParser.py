@@ -20,6 +20,8 @@
 ###############################################################################
 
 from __future__ import print_function
+from builtins import range
+
 
 import sys
 import os
@@ -373,12 +375,12 @@ class ResultsManager():
 
             bCombined = True
             while bCombined:
-                for i in xrange(0, len(hits)):
+                for i in range(0, len(hits)):
                     orfI = hits[i].target_name
                     scaffoldIdI = orfI[0:orfI.rfind('_')]
 
                     bCombined = False
-                    for j in xrange(i + 1, len(hits)):
+                    for j in range(i + 1, len(hits)):
                         orfJ = hits[j].target_name
                         scaffoldIdJ = orfJ[0:orfJ.rfind('_')]
 
@@ -672,7 +674,7 @@ class ResultsManager():
                                                                          self.binStats['Longest scaffold'], self.binStats['Longest contig'])
                 row += '\t%.1f\t%.2f' % (self.binStats['GC'] * 100, self.binStats['GC std'] * 100)
                 row += '\t%.2f\t%d\t%d' % (self.binStats['Coding density'] * 100, self.binStats['Translation table'], self.binStats['# predicted genes'])
-                row += '\t' + '\t'.join([str(data[i]) for i in xrange(6)])
+                row += '\t' + '\t'.join([str(data[i]) for i in range(6)])
 
                 if coverageBinProfiles:
                     if self.binId in coverageBinProfiles:
@@ -773,9 +775,9 @@ class ResultsManager():
 
                 if len(hitList) >= 2:
                     scaffoldsWithMultipleHits = set()
-                    for i in xrange(0, len(hitList)):
+                    for i in range(0, len(hitList)):
                         scaffoldId = hitList[i].target_name[0:hitList[i].target_name.rfind('_')]
-                        for j in xrange(i + 1, len(hitList)):
+                        for j in range(i + 1, len(hitList)):
                             if scaffoldId == hitList[j].target_name[0:hitList[j].target_name.rfind('_')]:
                                 scaffoldsWithMultipleHits.add(hitList[i].target_name)
                                 scaffoldsWithMultipleHits.add(hitList[j].target_name)

@@ -24,6 +24,8 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2014"
 __credits__ = ["Michael Imelfort"]
@@ -47,10 +49,17 @@ __MANIFEST__ = ".dmanifest"
 # system includes
 import os
 import hashlib
-import urllib2
 import urllib
 import shutil
 import errno
+
+try:
+    # For Python 3.0 and later
+    from urllib.request import urlopen
+    from urllib.error import URLError
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from urllib2 import urlopen, URLError
 
 # local includes
 from checkm.fileEntity import FileEntity as FE
@@ -64,7 +73,7 @@ class ManifestManager(object):
     """Use this interface for storing and managing file and paths"""
     def __init__(self, manType=None, timeout=30):
         self.timeout = timeout
-         
+
         self.files = []
         if manType is not None:
             self.type = manType
@@ -121,15 +130,15 @@ class ManifestManager(object):
         source = ""
         # first we assume it is remote
         try:
-            s_man = urllib2.urlopen(sourceManifestLocation + "/" + sourceManifestName, None, self.timeout)
+            s_man = urlopen(sourceManifestLocation + "/" + sourceManifestName, None, self.timeout)
             source = sourceManifestLocation + "/"
         except ValueError:
             # then it is probably a file
             s_man = open(os.path.join(sourceManifestLocation, sourceManifestName))
             source = os.path.join(sourceManifestLocation) + os.path.sep
-        except urllib2.URLError:
+        except URLError:
             # problems connecting to server, perhaps user is behind a proxy or firewall
-            print "Error: failed to connect to server."
+            print("Error: failed to connect to server.")
             return (None, None, None, None, None)
 
         first_line = True
@@ -140,11 +149,11 @@ class ManifestManager(object):
                     # get the type of the manifest
                     s_type = self.getManType(line)
                     if s_type != l_type:
-                        print "Error: type of source manifest (%s) does not match type of local manifest (%s)" % (s_type, l_type)
+                        print("Error: type of source manifest (%s) does not match type of local manifest (%s)" % (s_type, l_type))
                         return (None, None, None, None, None)
                 else:
                     # no type specified
-                    print "Error: type of source manifest is not specified. Is this a valid manifest file?"
+                    print("Error: type of source manifest is not specified. Is this a valid manifest file?")
                     return (None, None, None, None, None)
 
                 self.type = l_type
@@ -190,28 +199,28 @@ class ManifestManager(object):
                 modified_size += int(source_man[f][1])
 
             if len(addedFiles) > 0:
-                print "#------------------------------------------------------"
-                print "# Source contains %d new file(s) (%s)" % (len(addedFiles), self.formatData(new_size))
+                print("#------------------------------------------------------")
+                print("# Source contains %d new file(s) (%s)" % (len(addedFiles), self.formatData(new_size)))
                 for f in addedFiles:
-                    print "\t".join([self.formatData(int(source_man[f][1])), f])
+                    print("\t".join([self.formatData(int(source_man[f][1])), f]))
 
             if len(addedDirs) > 0:
-                print "#------------------------------------------------------"
-                print "# Source contains %d new folders(s)" % (len(addedDirs))
+                print("#------------------------------------------------------")
+                print("# Source contains %d new folders(s)" % (len(addedDirs)))
                 for f in addedDirs:
-                    print f
+                    print(f)
 
             if len(modified) > 0:
-                print "#------------------------------------------------------"
-                print "# Source contains %d modified file(s) (%s)" % (len(modified), self.formatData(modified_size))
+                print("#------------------------------------------------------")
+                print("# Source contains %d modified file(s) (%s)" % (len(modified), self.formatData(modified_size)))
                 for f in modified:
-                    print f
+                    print(f)
 
             if len(deleted) > 0:
-                print "#------------------------------------------------------"
-                print "# %d files have been deleted in the source:" % len(deleted)
+                print("#------------------------------------------------------")
+                print("# %d files have been deleted in the source:" % len(deleted))
                 for f in deleted:
-                    print f
+                    print(f)
         else:
             return (source,
                     [(a, source_man[a]) for a in addedFiles],
@@ -245,13 +254,13 @@ class ManifestManager(object):
             for f in modified:
                 total_size += int(f[1][1])
             if total_size != 0:
-                print "****************************************************************"
-                print "%d new file(s) to be downloaded from source" % len(added_files)
-                print "%d existing file(s) to be updated" % len(modified)
-                print "%s will need to be downloaded" % self.formatData(total_size)
+                print("****************************************************************")
+                print("%d new file(s) to be downloaded from source" % len(added_files))
+                print("%d existing file(s) to be updated" % len(modified))
+                print("%s will need to be downloaded" % self.formatData(total_size))
                 do_down = self.promptUserDownload()
                 if not do_down:
-                    print "Download aborted"
+                    print("Download aborted")
 
         update_manifest = False
         if do_down:
@@ -268,9 +277,9 @@ class ManifestManager(object):
                 urllib.urlretrieve(source+modify[0], full_path)
 
         if update_manifest:
-            print "(re) creating manifest file (please be patient)"
+            print("(re) creating manifest file (please be patient)")
             self.createManifest(localManifestLocation, manifestName=localManifestName)
-            
+
         return True
 
     def getManType(self, line):
@@ -312,10 +321,10 @@ class ManifestManager(object):
                                    "Changes *WILL* be permanent\n" \
                                    "Continue? ("+vrs+") : ").upper()
             if(option in valid_responses):
-                print "****************************************************************"
+                print("****************************************************************")
                 return valid_responses[option]
             else:
-                print "ERROR: unrecognised choice '"+option+"'"
+                print("ERROR: unrecognised choice '"+option+"'")
                 minimal = True
 
     def walk(self, parents, full_path, rel_path, dirs, files, skipFile=__MANIFEST__):

@@ -22,7 +22,7 @@
 import logging
 from collections import defaultdict
 
-from common import binIdFromFilename
+from .common import binIdFromFilename
 from checkm.util.seqUtils import readFasta, readFastaSeqIds
 
 

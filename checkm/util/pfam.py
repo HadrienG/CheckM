@@ -19,6 +19,8 @@
 #                                                                             #
 ###############################################################################
 
+from builtins import range
+
 from collections import defaultdict
 
 from checkm.common import checkFileExists
@@ -107,7 +109,7 @@ class PFAM(object):
             hits.sort(key=lambda x: x.full_e_value)
 
             filtered = set()
-            for i in xrange(0, len(hits)):
+            for i in range(0, len(hits)):
                 if i in filtered:
                     continue
 
@@ -117,7 +119,7 @@ class PFAM(object):
                 startI = hits[i].ali_from
                 endI = hits[i].ali_to
 
-                for j in xrange(i + 1, len(hits)):
+                for j in range(i + 1, len(hits)):
                     if j in filtered:
                         continue
 
@@ -138,7 +140,7 @@ class PFAM(object):
                                 filtered.add(j)
 
             # tabulate unfiltered hits
-            for i in xrange(0, len(hits)):
+            for i in range(0, len(hits)):
                 if i in filtered:
                     continue
 

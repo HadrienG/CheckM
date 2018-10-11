@@ -17,6 +17,9 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+from builtins import range
+
 """
 Calculate size of marker set.
 """
@@ -55,7 +58,7 @@ class PlotMarkerSetDistribution(object):
                 genomeIds.append(genomeId)
         genomeIds = set(genomeIds) - img.genomesWithMissingData(genomeIds)
 
-        print 'Lineage ' + taxonomyStr + ' contains ' + str(len(genomeIds)) + ' genomes.'
+        print('Lineage ' + taxonomyStr + ' contains ' + str(len(genomeIds)) + ' genomes.')
 
         # get marker set
         countTable = img.countTable(genomeIds)
@@ -65,7 +68,7 @@ class PlotMarkerSetDistribution(object):
         markerGenes = markerGenes - tigrToRemove
         geneDistTable = img.geneDistTable(genomeIds, markerGenes, spacingBetweenContigs=1e6)
 
-        print 'Number of marker genes: ' + str(len(markerGenes))
+        print('Number of marker genes: ' + str(len(markerGenes)))
 
         # randomly set genomes to plot
         if numRndGenomes != -1:
@@ -93,7 +96,7 @@ class PlotMarkerSetDistribution(object):
             u = markerSet.uniformity(metadata[genomeId]['genome size'], pts)
 
             fout.write(genomeId + '\t' + '; '.join(metadata[genomeId]['taxonomy']) + '\t' + str(len(geneDistTable[genomeId])) + '\t%.3f' % u)
-            for b in xrange(0, numBins):
+            for b in range(0, numBins):
                 fout.write('\t' + str(binCounts[b]))
             fout.write('\n')
 

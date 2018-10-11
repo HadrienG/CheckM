@@ -21,6 +21,8 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 import os
 import sys
 import argparse
@@ -33,27 +35,27 @@ class CalculateBounds(object):
     def __init__(self):
         self.lock = mp.Lock()
         self.counter = mp.Manager().Value('i', 0)
-        
+
     def run(self, genomeDir, outputFile, stepSize, width, minGenomes, threads):
-        """Process central values in parallel."""  
-        
+        """Process central values in parallel."""
+
         # get mean value of all genomes
-        print 'Parsing mean values from all genomes.'
+        print('Parsing mean values from all genomes.')
         files = os.listdir(genomeDir)
-        
+
         meanValues = {}
         for f in files:
             if not f.endswith('.tsv'):
                 continue
-            
+
             with open(os.path.join(genomeDir, f), 'r') as fin:
                 dataLine = fin.readline()
-                
+
                 genomeId = f[0:f.rfind('.')]
                 meanValue = float(dataLine.split('=')[1])
                 meanValues[genomeId] = meanValue
-                  
-        # process different mean values in parallel   
+
+        # process different mean values in parallel
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
 
@@ -78,15 +80,15 @@ class CalculateBounds(object):
 
         writerQueue.put((None, None))
         writeProc.join()
-        
+
     def __getGenomesInRange(self, meanValues, minValue, maxValue):
         genomeIds = []
         for genomeId, value in meanValues.iteritems():
             if value >= minValue and value <= maxValue:
                 genomeIds.append(genomeId)
-                
+
         return genomeIds
-    
+
     def __getDeltaForWindows(self, genomeDir, genomeIds):
         d = {}
         for genomeId in genomeIds:
@@ -100,43 +102,43 @@ class CalculateBounds(object):
                 elif bReadDist:
                     bReadDist = False
                     d[windowSize].extend([float(x) for x in line.split(',')])
-                
+
         return d
-            
+
     def __calculateResults(self, genomeDir, CIs, meanValues, width, minGenomes, queueIn, queueOut):
         """Calculate confidence interval for a specific mean value (e.g., GC) and different sequence lengths."""
         while True:
-            meanValue = queueIn.get(block=True, timeout=None) 
+            meanValue = queueIn.get(block=True, timeout=None)
             if meanValue == None:
                 break
 
             # get genomes within a given width of mean value
             genomeIds = self.__getGenomesInRange(meanValues, meanValue-width, meanValue+width)
-            
+
             if len(genomeIds) < minGenomes:
                 with self.lock:
                     self.counter.value += 1
                 continue
-            
-            windows = self.__getDeltaForWindows(genomeDir, genomeIds)  
+
+            windows = self.__getDeltaForWindows(genomeDir, genomeIds)
             d = {} # Note: defaultdict doesn't play well with 'ast' library
             for windowSize, testPts in windows.iteritems():
                 testPts = np.array(testPts)
-                
+
                 d[windowSize] = {}
                 percentiles = np.percentile(testPts, CIs)
                 for ci, p in zip(CIs, percentiles):
                     d[windowSize][ci] = p
-                
+
             queueOut.put((meanValue, d))
-                    
+
             with self.lock:
                 self.counter.value += 1
 
     def __storeResults(self, outputFile, totalItems, queue):
         """Store confidence intervals (i.e., to shared memory)."""
-        print 'Calculating distributions for %d mean values.' % totalItems
-        
+        print('Calculating distributions for %d mean values.' % totalItems)
+
         globalDist = {} # Note: defaultdict doesn't play well with 'ast' library
         while True:
             meanValue, dist = queue.get(block=True, timeout=None)
@@ -146,16 +148,16 @@ class CalculateBounds(object):
             statusStr = '  Finished processing %d of %d (%.2f%%) steps.' % (self.counter.value, totalItems, float(self.counter.value)*100/totalItems)
             sys.stdout.write('%s\r' % statusStr)
             sys.stdout.flush()
-            
-            globalDist[meanValue] = dist 
+
+            globalDist[meanValue] = dist
 
         sys.stdout.write('\n')
-        
+
         fout = open(outputFile, 'w')
         fout.write(str(globalDist))
         fout.close()
-              
-if __name__ == '__main__':  
+
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                             description='Calculate distribution bounds.')
     parser.add_argument('genome_dir', help='directory with distributions for each genome')
@@ -164,8 +166,8 @@ if __name__ == '__main__':
     parser.add_argument('-w', '--width', help='width around mean of distribution', type = float, default = 0.015)
     parser.add_argument('--min_genomes', help='minimum genomes to calculate statistics', type = int, default = 5)
     parser.add_argument('-t', '--threads', help='number of threads', type = int, default = 16)
-    
+
     args = parser.parse_args()
-    
+
     calculateBounds = CalculateBounds()
     calculateBounds.run(args.genome_dir, args.output_file, args.step_size, args.width, args.min_genomes, args.threads)

@@ -19,6 +19,8 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 import logging
 from collections import defaultdict
 
@@ -44,7 +46,7 @@ class TaxonParser():
             lineage = lineSplit[2]
             numGenomes = int(lineSplit[3])
             markerSet = eval(lineSplit[6].rstrip())
-            
+
             ms = MarkerSet(ranksByLabel[rank], lineage, numGenomes, markerSet)
             ms.removeMarkers(DefaultValues.MARKERS_TO_EXCLUDE)
 
@@ -73,8 +75,8 @@ class TaxonParser():
                     numMarkers, numMarkerSets = markerSet.size()
                     pTable.add_row([rank, taxon, markerSet.numGenomes, numMarkers, numMarkerSets])
 
-        print ''
-        print pTable.get_string()
+        print('')
+        print(pTable.get_string())
 
     def markerSet(self, rank, taxon, markerFile):
         """Obtain specified taxonomic-specific marker set."""

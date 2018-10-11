@@ -19,6 +19,8 @@
 #                                                                             #
 ###############################################################################
 
+from builtins import range
+
 import os
 import sys
 import logging
@@ -26,7 +28,7 @@ import gzip
 
 import numpy as np
 
-from common import binIdFromFilename, checkFileExists, readDistribution, findNearest
+from .common import binIdFromFilename, checkFileExists, readDistribution, findNearest
 from checkm.util.seqUtils import readFasta, writeFasta, baseCount
 from checkm.genomicSignatures import GenomicSignatures
 from checkm.prodigal import ProdigalGeneFeatureParser
@@ -123,7 +125,7 @@ class BinTools():
                     seqId = line[1:].split(None, 1)[0]
 
                     if seqId in seqIds:
-                        print '  [Warning] Sequence %s found multiple times in bin %s.' % (seqId, binId)
+                        print('  [Warning] Sequence %s found multiple times in bin %s.' % (seqId, binId))
                     seqIds.add(seqId)
 
             binSeqs[binId] = seqIds
@@ -131,19 +133,19 @@ class BinTools():
         # check for sequences assigned to multiple bins
         bDuplicates = False
         binIds = binSeqs.keys()
-        for i in xrange(0, len(binIds)):
-            for j in xrange(i + 1, len(binIds)):
+        for i in range(0, len(binIds)):
+            for j in range(i + 1, len(binIds)):
                 seqInter = set(binSeqs[binIds[i]]).intersection(set(binSeqs[binIds[j]]))
 
                 if len(seqInter) > 0:
                     bDuplicates = True
-                    print '  Sequences shared between %s and %s: ' % (binIds[i], binIds[j])
+                    print('  Sequences shared between %s and %s: ' % (binIds[i], binIds[j]))
                     for seqId in seqInter:
-                        print '    ' + seqId
-                    print ''
+                        print('    ' + seqId)
+                    print('')
 
         if not bDuplicates:
-            print '  No sequences assigned to multiple bins.'
+            print('  No sequences assigned to multiple bins.')
 
     def gcDist(self, seqs):
         """GC statistics for bin."""

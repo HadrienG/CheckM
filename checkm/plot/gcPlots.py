@@ -21,7 +21,7 @@
 
 import numpy as np
 
-from AbstractPlot import AbstractPlot
+from .AbstractPlot import AbstractPlot
 
 from checkm.binTools import BinTools
 from checkm.util.seqUtils import readFasta, baseCount

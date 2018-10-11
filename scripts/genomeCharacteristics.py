@@ -17,6 +17,8 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 """
 Calculate genome characteristics (coding density, strandedness, start codon frequency,
   stop codon frequency, gene length distributions) under translation table 11 for
@@ -48,11 +50,11 @@ class GenomeCharacteristics(object):
         return dna.translate(self.complements)[::-1]
 
     def runProdigal(self, genomeId):
-        print '  Running Prodigal.'
+        print('  Running Prodigal.')
         #os.system('prodigal -c -f gff -g 11 -d ./genome_characteristics/' + genomeId + '.genes.fna -a ./genome_characteristics/' + genomeId + '.genes.faa -i ' + IMG.genomeDir + genomeId + '/' + genomeId + '.fna > ./genome_characteristics/' + genomeId + '.prodigal.gff\n')
 
     def readSeqs(self, filename):
-        print '  Reading sequences.'
+        print('  Reading sequences.')
         seqs = {}
         seqId = None
         seq = ''
@@ -91,7 +93,7 @@ class GenomeCharacteristics(object):
             negStrand += 1
             stopCodon = self.revComp(seq[start-1:start+2])
         else:
-            print '[Error] Unknown strand type.'
+            print('[Error] Unknown strand type.')
             sys.exit()
 
         features = lineSplit[8].split(';')
@@ -138,7 +140,7 @@ class GenomeCharacteristics(object):
             lineNum += 1
 
             if lineNum % 10000 == 0:
-                print '  Reading line: ' + str(lineNum)
+                print('  Reading line: ' + str(lineNum))
 
             if line[0] == '#':
                 if 'seqlen=' in line:
@@ -159,7 +161,7 @@ class GenomeCharacteristics(object):
                 genes, posStrand, negStrand = self.parseLineGFF(line, genes, posStrand, negStrand, startCodonFreq, stopCodonFreq, rbsMotifFreq, geneLens, seqs)
 
         if totalSeqLen != 0 and genes == 0:
-            print '[Error] No Genes!'
+            print('[Error] No Genes!')
             sys.exit()
 
         codingDensity = float( sum(geneLens) ) / max(totalSeqLen, 1)
@@ -218,7 +220,7 @@ class GenomeCharacteristics(object):
         for groupName, data in charByGroup.iteritems():
             #sanity check
             if len(data['seq_len']) != len(data['coding_density']) or len(data['seq_len']) != len(data['strandedness']) or len(data['seq_len']) != len(data['gene_lens']):
-                print '[Error] Not all genome characteristics have the same length: ' + groupName
+                print('[Error] Not all genome characteristics have the same length: ' + groupName)
                 sys.exit()
 
             fout.write(groupName)
@@ -264,7 +266,7 @@ class GenomeCharacteristics(object):
         img = IMG()
 
         # get genome ids of all prokaryotes and euks
-        print 'Reading Proks and Euks metadata.'
+        print('Reading Proks and Euks metadata.')
         bHeader = True
         genomeIdToGroup = {}
         missingGenomeData = {}
@@ -289,7 +291,7 @@ class GenomeCharacteristics(object):
                 missingGenomeData[domain] = missingGenomeData.get(domain, 0) + 1
 
         # get genome ids of all viruses
-        print 'Reading Virus metadata.'
+        print('Reading Virus metadata.')
         bHeader = True
         for line in open(img.virusMetadataFile):
             if bHeader:
@@ -306,15 +308,15 @@ class GenomeCharacteristics(object):
                 missingGenomeData[domain] = missingGenomeData.get(domain, 0) + 1
 
         # report results
-        print 'Number of valid genomes: ' + str(len(genomeIdToGroup))
-        print 'Number of genomes missing genomic data: '
+        print('Number of valid genomes: ' + str(len(genomeIdToGroup)))
+        print('Number of genomes missing genomic data: ')
         for domain, count in missingGenomeData.iteritems():
-            print '  ' + domain + ': ' + str(count)
+            print('  ' + domain + ': ' + str(count))
 
         # process all genomes
         charByGroup = {}
         for genomeId, groupName in genomeIdToGroup.iteritems():
-            print genomeId
+            print(genomeId)
             self.runProdigal(genomeId)
             self.getCharacteristics(genomeId, groupName, charByGroup)
 

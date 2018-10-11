@@ -17,6 +17,9 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+from builtins import range
+
 """
 Test stability of marker set for different named taxonomic groups.
 """
@@ -48,24 +51,24 @@ class MarkerSetStabilityTest(object):
     def __processLineage(self, metadata, ubiquityThreshold, singleCopyThreshold, minGenomes, queueIn, queueOut):
         """Assess stability of marker set for a specific named taxonomic group."""
         while True:
-            lineage = queueIn.get(block=True, timeout=None) 
+            lineage = queueIn.get(block=True, timeout=None)
             if lineage == None:
-                break  
-            
+                break
+
             genomeIds = self.img.genomeIdsByTaxonomy(lineage, metadata, 'trusted')
-            
+
             markerGenes = []
             perChange = []
             numGenomesToSelect = int(0.9*len(genomeIds))
-            if len(genomeIds) >= minGenomes:  
-                # calculate marker set for all genomes in lineage          
+            if len(genomeIds) >= minGenomes:
+                # calculate marker set for all genomes in lineage
                 geneCountTable = self.img.geneCountTable(genomeIds)
                 markerGenes = self.markerset.markerGenes(genomeIds, geneCountTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
                 tigrToRemove = self.img.identifyRedundantTIGRFAMs(markerGenes)
 
                 markerGenes = markerGenes - tigrToRemove
 
-                for _ in xrange(0, 100):
+                for _ in range(0, 100):
                     # calculate marker set for subset of genomes
                     subsetGenomeIds = random.sample(genomeIds, numGenomesToSelect)
                     geneCountTable = self.img.geneCountTable(subsetGenomeIds)
@@ -79,10 +82,10 @@ class MarkerSetStabilityTest(object):
                 queueOut.put((lineage, len(genomeIds), len(markerGenes), numGenomesToSelect, mean(perChange), std(perChange)))
             else:
                 queueOut.put((lineage, len(genomeIds), len(markerGenes), numGenomesToSelect, -1, -1))
-                
+
     def __storeResults(self, outputFile, totalLineages, writerQueue):
         """Store results to file."""
-        
+
         fout = open(outputFile, 'w')
         fout.write('Lineage\t# genomes\t# markers\t# sampled genomes\tmean % change\tstd % change\n')
 
@@ -91,27 +94,27 @@ class MarkerSetStabilityTest(object):
             lineage, numGenomes, numMarkerGenes, numSampledGenomes, meanPerChange, stdPerChange = writerQueue.get(block=True, timeout=None)
             if lineage == None:
                 break
-                    
+
             numProcessedLineages += 1
             statusStr = '    Finished processing %d of %d (%.2f%%) lineages.' % (numProcessedLineages, totalLineages, float(numProcessedLineages)*100/totalLineages)
             sys.stdout.write('%s\r' % statusStr)
             sys.stdout.flush()
-            
+
 
             fout.write('%s\t%d\t%d\t%d\t%f\t%f\n' % (lineage, numGenomes, numMarkerGenes, numSampledGenomes, meanPerChange, stdPerChange))
 
         sys.stdout.write('\n')
-            
+
         fout.close()
-        
-        
+
+
     def run(self, outputFile, ubiquityThreshold, singleCopyThreshold, minGenomes, mostSpecificRank, numThreads):
-        """Calculate stability of marker sets for named taxonomic groups."""  
-        
-        print '  Testing stability of marker sets:'
-        
+        """Calculate stability of marker sets for named taxonomic groups."""
+
+        print('  Testing stability of marker sets:')
+
         random.seed(1)
-        
+
         # process each sequence in parallel
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
@@ -124,7 +127,7 @@ class MarkerSetStabilityTest(object):
 
         for _ in range(numThreads):
             workerQueue.put(None)
- 
+
         calcProc = [mp.Process(target = self.__processLineage, args = (metadata, ubiquityThreshold, singleCopyThreshold, minGenomes, workerQueue, writerQueue)) for _ in range(numThreads)]
         writeProc = mp.Process(target = self.__storeResults, args = (outputFile, len(lineages), writerQueue))
 

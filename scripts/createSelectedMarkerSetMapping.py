@@ -17,6 +17,8 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 """
 Create file mapping each internal node to the marker set selected by simulation.
 """
@@ -40,52 +42,52 @@ from  dendropy.dataobject.taxon import Taxon
 class CreateSelectedMarkerSetMapping(object):
     def __init__(self):
         pass
-    
+
     def __inferredMarkerSet(self, tree, node, inferredMarkerSet):
         while node != None:
-            uniqueId = node.label.split('|')[0] 
+            uniqueId = node.label.split('|')[0]
             if inferredMarkerSet.get(uniqueId, 'NA') != 'NA':
                 return inferredMarkerSet[uniqueId]
-            
+
             # return domain-specific set if reached that far
             if uniqueId == 'UID2':
                 return 'UID2'
             elif uniqueId == 'UID203':
                 return 'UID203'
-            
+
             node = node.parent_node
 
         # started at root, so just return its unique id
-        print uniqueId
+        print(uniqueId)
         return uniqueId
-        
-    def run(self):   
-        fout = open('./simulations/selected_marker_sets.tsv', 'w')    
-        
+
+    def run(self):
+        fout = open('./simulations/selected_marker_sets.tsv', 'w')
+
         # read tree
         treeFile = os.path.join('/srv/whitlam/bio/db/checkm', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
-        
+
         # reading marker set inferred via simulation
         inferredMarkerSet = {}
         with open('./simulations/simInferBestMarkerSet.tsv') as f:
             f.readline()
             for line in f:
                 lineSplit = line.split('\t')
-                
+
                 uid = lineSplit[0].split('|')[0].strip()
                 markerSetId = lineSplit[1].split('|')[0].strip()
                 inferredMarkerSet[uid] = markerSetId
-                
+
         # determine selected marker set for all internal nodes
         for node in tree.internal_nodes():
-            uniqueId = node.label.split('|')[0] 
+            uniqueId = node.label.split('|')[0]
             selectedUID = self.__inferredMarkerSet(tree, node, inferredMarkerSet)
-            
+
             fout.write(uniqueId + '\t' + selectedUID + '\n')
-                 
+
         fout.close()
-                  
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 

@@ -17,6 +17,8 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 __prog_name__ = 'TaxonomicMarkerSets'
 __prog_desc__ = 'create taxonomic-specific marker sets'
 
@@ -42,13 +44,13 @@ class TaxonomicMarkerSets(object):
     def __init__(self):
         pass
 
-    def __workerThread(self, ubiquityThreshold, singleCopyThreshold, 
-                       minGenomes, 
-                       colocatedDistThreshold, colocatedGenomeThreshold, 
-                       metadata, 
+    def __workerThread(self, ubiquityThreshold, singleCopyThreshold,
+                       minGenomes,
+                       colocatedDistThreshold, colocatedGenomeThreshold,
+                       metadata,
                        queueIn, queueOut):
         """Process each data item in parallel."""
-        
+
         img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         markerSetBuilder = MarkerSetBuilder()
 
@@ -71,14 +73,14 @@ class TaxonomicMarkerSets(object):
             queueOut.put((lineage, colocatedSets, len(genomeIds)))
 
     def __writerThread(self, pfamIdToPfamAcc,
-                       ubiquityThreshold, singleCopyThreshold, 
+                       ubiquityThreshold, singleCopyThreshold,
                        colocatedDistThreshold, colocatedGenomeThreshold,
                        outputDir, numDataItems, writerQueue):
         """Store or write results of worker threads in a single thread."""
-        
+
         #taxonSetOut = open(os.path.join('..', 'data', 'taxon_marker_sets.tsv'), 'w')
         taxonSetOut = open(os.path.join('.', 'data', 'taxon_marker_sets.tsv'), 'w')
-        
+
         processedItems = 0
         while True:
             lineage, colocatedSets, numGenomes = writerQueue.get(block=True, timeout=None)
@@ -89,11 +91,11 @@ class TaxonomicMarkerSets(object):
             statusStr = 'Finished processing %d of %d (%.2f%%) lineages.' % (processedItems, numDataItems, float(processedItems)*100/numDataItems)
             sys.stdout.write('%s\r' % statusStr)
             sys.stdout.flush()
-            
+
             if colocatedSets != None:
                 taxonomy = [x.strip() for x in lineage.split(';')]
                 rankPrefix = rankPrefixes[len(taxonomy)-1]
-                
+
                 cladeName = taxonomy[-1].strip().replace(' ', '_')
                 fout = open(os.path.join(outputDir, rankPrefix + cladeName + '.txt'), 'w')
                 fout.write('# Taxonomic Marker Set\n')
@@ -103,7 +105,7 @@ class TaxonomicMarkerSets(object):
                 fout.write('SINGLE_COPY\t' + str(singleCopyThreshold) + '\n')
                 fout.write('COLOCATED_DISTANCE\t' + str(colocatedDistThreshold) + '\n')
                 fout.write('COLOCATED_GENOME_PERCENTAGE\t' + str(colocatedGenomeThreshold) + '\n')
-                
+
                 # change model names to accession numbers, and make
                 # sure there is an HMM model for each PFAM
                 mungedColocatedSets = []
@@ -113,57 +115,57 @@ class TaxonomicMarkerSets(object):
                     for geneId in geneSet:
                         if 'pfam' in geneId:
                             pfamId = geneId.replace('pfam', 'PF')
-                            if pfamId in pfamIdToPfamAcc:                    
+                            if pfamId in pfamIdToPfamAcc:
                                 s.add(pfamIdToPfamAcc[pfamId])
                         else:
                             s.add(geneId)
-                            
+
                     setSizes.append(len(s))
                     mungedColocatedSets.append(s)
-                            
+
                 fout.write(str(mungedColocatedSets))
                 fout.close()
-                
+
                 # write out single taxonomic-specific marker set file
                 numMarkerGenes = 0
                 for m in mungedColocatedSets:
                     numMarkerGenes += len(m)
-                    
+
                 taxon = taxonomy[-1]
                 if len(taxonomy) == 7:
                     taxon = taxonomy[5] + ' ' + taxonomy[6]
-                    
+
                 maxSetSize = max(setSizes)
                 avgSetSize = float(sum(setSizes))/len(setSizes)
                 taxonSetOut.write(ranksByLevel[len(taxonomy)-1] + '\t' + taxon + '\t' + lineage + '\t' + str(numGenomes) + '\t' + str(numMarkerGenes) + '\t' + str(len(mungedColocatedSets)) + '\t' + str(maxSetSize) + '\t' + str(avgSetSize) + '\t' + str(mungedColocatedSets) + '\n')
 
         sys.stdout.write('\n')
         taxonSetOut.close()
-        
+
     def __pfamIdToPfamAcc(self, img):
         pfamIdToPfamAcc = {}
         for line in open('/srv/whitlam/bio/db/pfam/27/Pfam-A.hmm'):
             if 'ACC' in line:
                 acc = line.split()[1].strip()
                 pfamId = acc.split('.')[0]
-                
+
                 pfamIdToPfamAcc[pfamId] = acc
-        
+
         return pfamIdToPfamAcc
-        
+
     def run(self, outputDir, ubiquityThreshold, singleCopyThreshold, minGenomes, colocatedDistThreshold, colocatedGenomeThreshold, threads):
         if not os.path.exists(outputDir):
             os.makedirs(outputDir)
-            
+
         # determine lineages to process
         img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         metadata = img.genomeMetadata()
         lineages = img.lineagesSorted(metadata)
         lineages.append('Universal')
-        
+
         # determine HMM model accession numbers
         pfamIdToPfamAcc = self.__pfamIdToPfamAcc(img)
-        
+
         # populate worker queue with data to process
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
@@ -174,13 +176,13 @@ class TaxonomicMarkerSets(object):
         for _ in range(threads):
             workerQueue.put(None)
 
-        workerProc = [mp.Process(target = self.__workerThread, args = (ubiquityThreshold, singleCopyThreshold, 
-                                                                       minGenomes, 
-                                                                       colocatedDistThreshold, colocatedGenomeThreshold, 
+        workerProc = [mp.Process(target = self.__workerThread, args = (ubiquityThreshold, singleCopyThreshold,
+                                                                       minGenomes,
+                                                                       colocatedDistThreshold, colocatedGenomeThreshold,
                                                                        metadata,
                                                                        workerQueue, writerQueue)) for _ in range(threads)]
-        writeProc = mp.Process(target = self.__writerThread, args = (pfamIdToPfamAcc, 
-                                                                       ubiquityThreshold, singleCopyThreshold, 
+        writeProc = mp.Process(target = self.__writerThread, args = (pfamIdToPfamAcc,
+                                                                       ubiquityThreshold, singleCopyThreshold,
                                                                        colocatedDistThreshold, colocatedGenomeThreshold,
                                                                        outputDir, len(lineages), writerQueue))
 
@@ -196,8 +198,8 @@ class TaxonomicMarkerSets(object):
         writeProc.join()
 
 if __name__ == '__main__':
-    print __prog_name__ + ' v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print(__prog_name__ + ' v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('output_dir', help='output directory')

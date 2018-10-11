@@ -17,6 +17,9 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+from builtins import range
+
 __prog_desc__ = 'prune taxa with identical sequences from tree'
 
 __author__ = 'Donovan Parks'
@@ -35,24 +38,24 @@ import dendropy
 class PruneTree(object):
     def __init__(self):
         pass
-    
+
     def __readDuplicateTaxa(self, dupSeqFile):
         dupTaxa = []
-        
+
         for line in open(dupSeqFile):
             lineSplit = line.split()
-            
-            for i in xrange(1, len(lineSplit)):
+
+            for i in range(1, len(lineSplit)):
                 dupTaxa.append(lineSplit[i].strip())
-                
+
         return dupTaxa
-                
+
 
     def run(self, dupSeqFile, inputTree, outputTree):
-        # get list of taxa with duplicate sequences 
+        # get list of taxa with duplicate sequences
         dupTaxa = self.__readDuplicateTaxa(dupSeqFile)
-        print 'Pruing %d taxa.' % len(dupTaxa)
-         
+        print('Pruing %d taxa.' % len(dupTaxa))
+
         # prune duplicate taxa from tree
         tree = dendropy.Tree.get_from_path(inputTree, schema='newick', as_rooted=True, preserve_underscores=True)
 
@@ -61,8 +64,8 @@ class PruneTree(object):
         tree.write_to_path(outputTree, schema='newick', suppress_rooting=True)
 
 if __name__ == '__main__':
-    print 'RerootTree v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print('RerootTree v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('duplicate_seq_file', help='file indicating deplicate sequences as determine with seqmagick')

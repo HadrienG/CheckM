@@ -21,7 +21,7 @@
 
 import numpy as np
 
-from AbstractPlot import AbstractPlot
+from .AbstractPlot import AbstractPlot
 
 from matplotlib.ticker import MaxNLocator
 

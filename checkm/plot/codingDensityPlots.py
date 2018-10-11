@@ -19,12 +19,14 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 import os
 import sys
 
 import numpy as np
 
-from AbstractPlot import AbstractPlot
+from .AbstractPlot import AbstractPlot
 
 from checkm.prodigal import ProdigalGeneFeatureParser
 from checkm.common import readDistribution, findNearest, binIdFromFilename
@@ -54,7 +56,7 @@ class CodingDensityPlots(AbstractPlot):
         # parse Prodigal output
         gffFile = os.path.join(self.options.out_folder, 'bins', binIdFromFilename(fastaFile), DefaultValues.PRODIGAL_GFF)
         if not os.path.exists(gffFile):
-            print 'Missing gene feature file (%s). This plot if not compatible with the --genes option.' % DefaultValues.PRODIGAL_GFF
+            print('Missing gene feature file (%s). This plot if not compatible with the --genes option.' % DefaultValues.PRODIGAL_GFF)
             sys.exit()
 
         prodigalParser = ProdigalGeneFeatureParser(gffFile)

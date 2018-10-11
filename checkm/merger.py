@@ -19,6 +19,8 @@
 #                                                                             #
 ###############################################################################
 
+from builtins import range
+
 import os
 import sys
 import logging
@@ -63,13 +65,13 @@ class Merger():
 
         binMarkerHits = resultsParser.results
         binIds = sorted(binMarkerHits.keys())
-        for i in xrange(0, len(binMarkerHits)):
+        for i in range(0, len(binMarkerHits)):
             binIdI = binIds[i]
 
             geneCountsI = binMarkerHits[binIdI].geneCounts(binIdToBinMarkerSets[binIdI].mostSpecificMarkerSet(), binMarkerHits[binIdI].markerHits, True)
             completenessI, contaminationI = geneCountsI[6:8]
 
-            for j in xrange(i + 1, len(binMarkerHits)):
+            for j in range(i + 1, len(binMarkerHits)):
                 binIdJ = binIds[j]
 
                 geneCountsJ = binMarkerHits[binIdJ].geneCounts(binIdToBinMarkerSets[binIdJ].mostSpecificMarkerSet(), binMarkerHits[binIdJ].markerHits, True)

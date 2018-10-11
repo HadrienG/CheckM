@@ -19,6 +19,8 @@
 #                                                                             #
 ###############################################################################
 
+from builtins import range
+
 import os
 import sys
 import logging
@@ -26,7 +28,7 @@ import uuid
 import tempfile
 import shutil
 import multiprocessing as mp
-import cPickle as pickle
+# import cPickle as pickle
 import gzip
 
 from checkm.defaultValues import DefaultValues
@@ -97,13 +99,13 @@ class BinMarkerSets():
 
         selectedId = selectedMarkerSetMap[uid]
         self.selectedLinageSpecificMarkerSet = None
-        
+
         while not self.selectedLinageSpecificMarkerSet:
             for ms in self.markerSets:
                 if ms.UID == selectedId:
                     self.selectedLinageSpecificMarkerSet = ms
                     break
-                
+
             if not self.selectedLinageSpecificMarkerSet:
                 # This is a hack for the reduced tree. Since not all
                 # marker sets are in the reduced tree it is possible the
@@ -146,7 +148,7 @@ class BinMarkerSets():
         """Construct bin marker set data from line."""
         lineSplit = line.split('\t')
         numMarkerSets = int(lineSplit[1])
-        for i in xrange(0, numMarkerSets):
+        for i in range(0, numMarkerSets):
             uid = lineSplit[i * 4 + 2]
             lineageStr = lineSplit[i * 4 + 3]
             numGenomes = int(lineSplit[i * 4 + 4])
@@ -191,7 +193,7 @@ class MarkerSet():
                 markerGenes.add(marker)
 
         return markerGenes
-        
+
     def removeMarkers(self, markersToRemove):
         """Remove specified markers from marker sets."""
         newMarkerSet = []

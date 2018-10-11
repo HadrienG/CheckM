@@ -19,6 +19,8 @@
 #                                                                             #
 ###############################################################################
 
+from builtins import range
+
 import os
 import sys
 import uuid
@@ -353,7 +355,7 @@ class HmmerAligner:
             else:
                 fout.write('>' + seqId + '\n')
 
-            maskedSeq = ''.join([seq[i] for i in xrange(0, len(seq)) if mask[i] == 'x'])
+            maskedSeq = ''.join([seq[i] for i in range(0, len(seq)) if mask[i] == 'x'])
             fout.write(maskedSeq + '\n')
         fout.close()
 

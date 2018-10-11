@@ -19,6 +19,7 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
 
 class HmmModelError(Exception):
     pass

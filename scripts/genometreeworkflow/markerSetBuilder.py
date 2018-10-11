@@ -17,6 +17,9 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+from builtins import range
+
 """
 Methods for identifying and investigating marker sets.
 """
@@ -47,30 +50,30 @@ class MarkerSetBuilder(object):
         self.colocatedFile = './data/colocated.tsv'
         self.duplicateSeqs = self.readDuplicateSeqs()
         self.uniqueIdToLineageStatistics = self.__readNodeMetadata()
-        
+
         self.cachedGeneCountTable = None
-        
+
     def precomputeGenomeSeqLens(self, genomeIds):
         """Cache the length of contigs/scaffolds for all genomes."""
-        
+
         # This function is intended to speed up functions, such as img.geneDistTable(),
         # that are called multiple times (typically during simulations)
         self.img.precomputeGenomeSeqLens(genomeIds)
-            
+
     def precomputeGenomeFamilyPositions(self, genomeIds, spacingBetweenContigs):
         """Cache position of PFAM and TIGRFAM genes in genomes."""
-        
+
         # This function is intended to speed up functions, such as img.geneDistTable(),
         # that are called multiple times (typically during simulations)
         self.img.precomputeGenomeFamilyPositions(genomeIds, spacingBetweenContigs)
-        
+
     def precomputeGenomeFamilyScaffolds(self, genomeIds):
         """Cache scaffolds of PFAM and TIGRFAM genes in genomes."""
-        
+
         # This function is intended to speed up functions, such as img.geneDistTable(),
         # that are called multiple times (typically during simulations)
         self.img.precomputeGenomeFamilyScaffolds(genomeIds)
-        
+
     def getLineageMarkerGenes(self, lineage, minGenomes = 20, minMarkerSets = 20):
         pfamIds = set()
         tigrIds = set()
@@ -130,18 +133,18 @@ class MarkerSetBuilder(object):
 
     def markerGenes(self, genomeIds, countTable, ubiquityThreshold, singleCopyThreshold):
         if ubiquityThreshold < 1 or singleCopyThreshold < 1:
-            print '[Warning] Looks like degenerate threshold.'
+            print('[Warning] Looks like degenerate threshold.')
 
         # find genes meeting ubiquity and single-copy thresholds
         markers = set()
         for clusterId, genomeCounts in countTable.iteritems():
             ubiquity = 0
             singleCopy = 0
-            
+
             if len(genomeCounts) < ubiquityThreshold:
                 # gene is clearly not ubiquitous
                 continue
-            
+
             for genomeId in genomeIds:
                 count = genomeCounts.get(genomeId, 0)
 
@@ -158,13 +161,13 @@ class MarkerSetBuilder(object):
 
     def colocatedGenes(self, geneDistTable, distThreshold = 5000, genomeThreshold = 0.95):
         """Identify co-located gene pairs."""
-                
+
         colocatedGenes = defaultdict(int)
         for _, clusterIdToGeneLocs in geneDistTable.iteritems():
             clusterIds = clusterIdToGeneLocs.keys()
             for i, clusterId1 in enumerate(clusterIds):
                 geneLocations1 = clusterIdToGeneLocs[clusterId1]
-                
+
                 for clusterId2 in clusterIds[i+1:]:
                     geneLocations2 = clusterIdToGeneLocs[clusterId2]
                     bColocated = False
@@ -201,7 +204,7 @@ class MarkerSetBuilder(object):
         # combine any sets with overlapping genes
         bProcessed = [False]*len(sets)
         finalSets = []
-        for i in xrange(0, len(sets)):
+        for i in range(0, len(sets)):
             if bProcessed[i]:
                 continue
 
@@ -211,7 +214,7 @@ class MarkerSetBuilder(object):
             bUpdated = True
             while bUpdated:
                 bUpdated = False
-                for j in xrange(i+1, len(sets)):
+                for j in range(i+1, len(sets)):
                     if bProcessed[j]:
                         continue
 
@@ -268,7 +271,7 @@ class MarkerSetBuilder(object):
         # calculate distance between adjacent points
         dists = []
         pts = sorted(pts)
-        for i in xrange(0, len(pts)-1):
+        for i in range(0, len(pts)-1):
             dists.append(pts[i+1] - pts[i])
 
         # calculate uniformity index
@@ -279,10 +282,10 @@ class MarkerSetBuilder(object):
             den += max(d, U)
 
         return 1.0 - num/den
-    
+
     def sampleGenome(self, genomeLen, percentComp, percentCont, contigLen):
         """Sample a genome to simulate a given percent completion and contamination."""
-        
+
         contigsInGenome = genomeLen / contigLen
 
         # determine number of contigs to achieve desired completeness and contamination
@@ -290,69 +293,69 @@ class MarkerSetBuilder(object):
         contigsToSampleCont = int(contigsInGenome*percentCont + 0.5)
 
         # randomly sample contigs with contamination done via sampling with replacement
-        compContigs = random.sample(xrange(contigsInGenome), contigsToSampleComp)  
-        contContigs = choice(xrange(contigsInGenome), contigsToSampleCont, replace=True)
-    
+        compContigs = random.sample(range(contigsInGenome), contigsToSampleComp)
+        contContigs = choice(range(contigsInGenome), contigsToSampleCont, replace=True)
+
         # determine start of each contig
         contigStarts = [c*contigLen for c in compContigs]
         contigStarts += [c*contigLen for c in contContigs]
-            
+
         contigStarts.sort()
-        
+
         trueComp = float(contigsToSampleComp)*contigLen*100 / genomeLen
         trueCont = float(contigsToSampleCont)*contigLen*100 / genomeLen
 
         return trueComp, trueCont, contigStarts
-    
+
     def sampleGenomeScaffoldsInvLength(self, targetPer, seqLens, genomeSize):
         """Sample genome comprised of several sequences with probability inversely proportional to length."""
-        
+
         # calculate probability of sampling a sequences
         seqProb = []
         for _, seqLen in seqLens.iteritems():
             prob = 1.0 / (float(seqLen) / genomeSize)
             seqProb.append(prob)
-            
+
         seqProb = array(seqProb)
         seqProb /= sum(seqProb)
-            
+
         # select sequence with probability proportional to length
         selectedSeqsIds = choice(seqLens.keys(), size = len(seqLens), replace=False, p = seqProb)
-        
+
         sampledSeqIds = []
         truePer = 0.0
         for seqId in selectedSeqsIds:
             sampledSeqIds.append(seqId)
             truePer += float(seqLens[seqId]) / genomeSize
-            
+
             if truePer >= targetPer:
                 break
-        
+
         return sampledSeqIds, truePer*100
-    
+
     def sampleGenomeScaffoldsWithoutReplacement(self, targetPer, seqLens, genomeSize):
         """Sample genome comprised of several sequences without replacement.
-        
+
           Sampling is conducted randomly until the selected sequences comprise
           greater than or equal to the desired target percentage.
         """
- 
+
         selectedSeqsIds = choice(seqLens.keys(), size = len(seqLens), replace=False)
-        
+
         sampledSeqIds = []
         truePer = 0.0
         for seqId in selectedSeqsIds:
             sampledSeqIds.append(seqId)
             truePer += float(seqLens[seqId]) / genomeSize
-            
+
             if truePer >= targetPer:
                 break
-        
+
         return sampledSeqIds, truePer*100
-    
+
     def containedMarkerGenes(self, markerGenes, clusterIdToGenomePositions, startPartialGenomeContigs, contigLen):
         """Determine markers contained in a set of contigs."""
-        
+
         contained = {}
         for markerGene in markerGenes:
             positions = clusterIdToGenomePositions.get(markerGene, [])
@@ -367,7 +370,7 @@ class MarkerSetBuilder(object):
                 contained[markerGene] = containedPos
 
         return contained
-    
+
     def markerGenesOnScaffolds(self, markerGenes, genomeId, scaffoldIds, containedMarkerGenes):
         """Determine if marker genes are found on the scaffolds of a given genome."""
         for markerGeneId in markerGenes:
@@ -376,7 +379,7 @@ class MarkerSetBuilder(object):
             for scaffoldId in scaffoldIdsWithMarker:
                 if scaffoldId in scaffoldIds:
                     containedMarkerGenes[markerGeneId] += [scaffoldId]
-        
+
     def readDuplicateSeqs(self):
         """Parse file indicating duplicate sequence alignments."""
         duplicateSeqs = {}
@@ -384,28 +387,28 @@ class MarkerSetBuilder(object):
             lineSplit = line.rstrip().split()
             if len(lineSplit) > 1:
                 duplicateSeqs[lineSplit[0]] = lineSplit[1:]
-                
+
         return duplicateSeqs
-        
+
     def __readNodeMetadata(self):
         """Read metadata for internal nodes."""
-        
+
         uniqueIdToLineageStatistics = {}
         metadataFile = os.path.join('/srv/whitlam/bio/db/checkm/genome_tree', 'genome_tree.metadata.tsv')
         with open(metadataFile) as f:
             f.readline()
             for line in f:
                 lineSplit = line.rstrip().split('\t')
-                
+
                 uniqueId = lineSplit[0]
-                
+
                 d = {}
                 d['# genomes'] = int(lineSplit[1])
                 d['taxonomy'] = lineSplit[2]
                 try:
                     d['bootstrap'] = float(lineSplit[3])
                 except:
-                    d['bootstrap'] = 'NA'                 
+                    d['bootstrap'] = 'NA'
                 d['gc mean'] = float(lineSplit[4])
                 d['gc std'] = float(lineSplit[5])
                 d['genome size mean'] = float(lineSplit[6])/1e6
@@ -413,36 +416,36 @@ class MarkerSetBuilder(object):
                 d['gene count mean'] = float(lineSplit[8])
                 d['gene count std'] = float(lineSplit[9])
                 d['marker set'] = lineSplit[10].rstrip()
-                
+
                 uniqueIdToLineageStatistics[uniqueId] = d
-                
+
         return uniqueIdToLineageStatistics
-    
+
     def __getNextNamedNode(self, node, uniqueIdToLineageStatistics):
         """Get first parent node with taxonomy information."""
         parentNode = node.parent_node
         while True:
             if parentNode == None:
                 break # reached the root node so terminate
-            
+
             if parentNode.label:
                 trustedUniqueId = parentNode.label.split('|')[0]
                 trustedStats = uniqueIdToLineageStatistics[trustedUniqueId]
                 if trustedStats['taxonomy'] != '':
                     return trustedStats['taxonomy']
-                
-            parentNode = parentNode.parent_node            
-                    
+
+            parentNode = parentNode.parent_node
+
         return 'root'
-    
+
     def __refineMarkerSet(self, markerSet, lineageSpecificMarkerSet):
         """Refine marker set to account for lineage-specific gene loss and duplication."""
-                                        
+
         # refine marker set by finding the intersection between these two sets,
-        # this removes markers that are not single-copy or ubiquitous in the 
+        # this removes markers that are not single-copy or ubiquitous in the
         # specific lineage of a bin
         # Note: co-localization information is taken from the trusted set
-                
+
         # remove genes not present in the lineage-specific gene set
         finalMarkerSet = []
         for ms in markerSet.markerSet:
@@ -450,54 +453,54 @@ class MarkerSetBuilder(object):
             for gene in ms:
                 if gene in lineageSpecificMarkerSet.getMarkerGenes():
                     s.add(gene)
-                           
+
             if s:
                 finalMarkerSet.append(s)
 
         refinedMarkerSet = MarkerSet(markerSet.UID, markerSet.lineageStr, markerSet.numGenomes, finalMarkerSet)
-    
+
         return refinedMarkerSet
-    
+
     def ____removeInvalidLineageMarkerGenes(self, markerSet, lineageSpecificMarkersToRemove):
         """Refine marker set to account for lineage-specific gene loss and duplication."""
-                                        
+
         # refine marker set by removing marker genes subject to lineage-specific
-        # gene loss and duplication 
+        # gene loss and duplication
         #
         # Note: co-localization information is taken from the trusted set
-                
+
         finalMarkerSet = []
         for ms in markerSet.markerSet:
             s = set()
             for gene in ms:
                 if gene.startswith('PF'):
-                    print 'ERROR! Expected genes to start with pfam, not PF.'
-                    
+                    print('ERROR! Expected genes to start with pfam, not PF.')
+
                 if gene not in lineageSpecificMarkersToRemove:
                     s.add(gene)
-                           
+
             if s:
                 finalMarkerSet.append(s)
 
         refinedMarkerSet = MarkerSet(markerSet.UID, markerSet.lineageStr, markerSet.numGenomes, finalMarkerSet)
-    
+
         return refinedMarkerSet
-    
+
     def missingGenes(self, genomeIds, markerGenes, ubiquityThreshold):
         """Inferring consistently missing marker genes within a set of genomes."""
-        
+
         if self.cachedGeneCountTable != None:
             geneCountTable = self.cachedGeneCountTable
         else:
             geneCountTable = self.img.geneCountTable(genomeIds)
-        
+
         # find genes meeting ubiquity and single-copy thresholds
         missing = set()
         for clusterId, genomeCounts in geneCountTable.iteritems():
             if clusterId not in markerGenes:
                 continue
-                 
-            absence = 0 
+
+            absence = 0
             for genomeId in genomeIds:
                 count = genomeCounts.get(genomeId, 0)
 
@@ -508,22 +511,22 @@ class MarkerSetBuilder(object):
                 missing.add(clusterId)
 
         return missing
-    
+
     def duplicateGenes(self, genomeIds, markerGenes, ubiquityThreshold):
         """Inferring consistently duplicated marker genes within a set of genomes."""
-        
+
         if self.cachedGeneCountTable != None:
             geneCountTable = self.cachedGeneCountTable
         else:
             geneCountTable = self.img.geneCountTable(genomeIds)
-        
+
         # find genes meeting ubiquity and single-copy thresholds
         duplicate = set()
         for clusterId, genomeCounts in geneCountTable.iteritems():
             if clusterId not in markerGenes:
                 continue
-                 
-            duplicateCount = 0 
+
+            duplicateCount = 0
             for genomeId in genomeIds:
                 count = genomeCounts.get(genomeId, 0)
 
@@ -534,15 +537,15 @@ class MarkerSetBuilder(object):
                 duplicate.add(clusterId)
 
         return duplicate
-    
+
     def buildMarkerGenes(self, genomeIds, ubiquityThreshold, singleCopyThreshold):
         """Infer marker genes from specified genomes."""
-        
+
         if self.cachedGeneCountTable != None:
             geneCountTable = self.cachedGeneCountTable
         else:
             geneCountTable = self.img.geneCountTable(genomeIds)
-        
+
         #counts = []
         #singleCopy = 0
         #for genomeId, count in geneCountTable['pfam01351'].iteritems():
@@ -550,7 +553,7 @@ class MarkerSetBuilder(object):
         #    counts.append(count)
         #    if count == 1:
         #        singleCopy += 1
-            
+
         #print 'Ubiquity: %d of %d' % (len(counts), len(genomeIds))
         #print 'Single-copy: %d of %d' % (singleCopy, len(genomeIds))
         #print 'Mean: %.2f' % mean(counts)
@@ -560,9 +563,9 @@ class MarkerSetBuilder(object):
         markerGenes = markerGenes - tigrToRemove
 
         return markerGenes
-    
-    def buildMarkerSet(self, genomeIds, ubiquityThreshold, singleCopyThreshold, spacingBetweenContigs = 5000):  
-        """Infer marker set from specified genomes."""      
+
+    def buildMarkerSet(self, genomeIds, ubiquityThreshold, singleCopyThreshold, spacingBetweenContigs = 5000):
+        """Infer marker set from specified genomes."""
 
         markerGenes = self.buildMarkerGenes(genomeIds, ubiquityThreshold, singleCopyThreshold)
 
@@ -572,10 +575,10 @@ class MarkerSetBuilder(object):
         markerSet = MarkerSet(0, 'NA', len(genomeIds), colocatedSets)
 
         return markerSet
-    
+
     def readLineageSpecificGenesToRemove(self):
-        """Get set of genes subject to lineage-specific gene loss and duplication."""       
-    
+        """Get set of genes subject to lineage-specific gene loss and duplication."""
+
         self.lineageSpecificGenesToRemove = {}
         for line in open('/srv/whitlam/bio/db/checkm/genome_tree/missing_duplicate_genes_50.tsv'):
             lineSplit = line.split('\t')
@@ -583,20 +586,20 @@ class MarkerSetBuilder(object):
             missingGenes = eval(lineSplit[1])
             duplicateGenes = eval(lineSplit[2])
             self.lineageSpecificGenesToRemove[uid] = missingGenes.union(duplicateGenes)
-            
-    def buildBinMarkerSet(self, tree, curNode, ubiquityThreshold, singleCopyThreshold, bMarkerSet = True, genomeIdsToRemove = None):   
-        """Build lineage-specific marker sets for a genome in a LOO-fashion."""
-                               
-        # determine marker sets for bin      
-        binMarkerSets = BinMarkerSets(curNode.label, BinMarkerSets.TREE_MARKER_SET)
-        refinedBinMarkerSet = BinMarkerSets(curNode.label, BinMarkerSets.TREE_MARKER_SET)         
 
-        # ascend tree to root, recording all marker sets 
-        uniqueId = curNode.label.split('|')[0] 
+    def buildBinMarkerSet(self, tree, curNode, ubiquityThreshold, singleCopyThreshold, bMarkerSet = True, genomeIdsToRemove = None):
+        """Build lineage-specific marker sets for a genome in a LOO-fashion."""
+
+        # determine marker sets for bin
+        binMarkerSets = BinMarkerSets(curNode.label, BinMarkerSets.TREE_MARKER_SET)
+        refinedBinMarkerSet = BinMarkerSets(curNode.label, BinMarkerSets.TREE_MARKER_SET)
+
+        # ascend tree to root, recording all marker sets
+        uniqueId = curNode.label.split('|')[0]
         lineageSpecificRefinement = self.lineageSpecificGenesToRemove[uniqueId]
-        
+
         while curNode != None:
-            uniqueId = curNode.label.split('|')[0] 
+            uniqueId = curNode.label.split('|')[0]
             stats = self.uniqueIdToLineageStatistics[uniqueId]
             taxonomyStr = stats['taxonomy']
             if taxonomyStr == '':
@@ -606,46 +609,46 @@ class MarkerSetBuilder(object):
             genomeIds = set()
             for leaf in leafNodes:
                 genomeIds.add(leaf.taxon.label.replace('IMG_', ''))
-                
+
                 duplicateGenomes = self.duplicateSeqs.get(leaf.taxon.label, [])
                 for dup in duplicateGenomes:
                     genomeIds.add(dup.replace('IMG_', ''))
 
             # remove all genomes from the same taxonomic group as the genome of interest
             if genomeIdsToRemove != None:
-                genomeIds.difference_update(genomeIdsToRemove) 
+                genomeIds.difference_update(genomeIdsToRemove)
 
             if len(genomeIds) >= 2:
                 if bMarkerSet:
                     markerSet = self.buildMarkerSet(genomeIds, ubiquityThreshold, singleCopyThreshold)
                 else:
                     markerSet = MarkerSet(0, 'NA', len(genomeIds), [self.buildMarkerGenes(genomeIds, ubiquityThreshold, singleCopyThreshold)])
-                
+
                 markerSet.lineageStr = uniqueId + ' | ' + taxonomyStr.split(';')[-1]
                 binMarkerSets.addMarkerSet(markerSet)
-        
+
                 #refinedMarkerSet = self.__refineMarkerSet(markerSet, lineageSpecificMarkerSet)
                 refinedMarkerSet = self.____removeInvalidLineageMarkerGenes(markerSet, lineageSpecificRefinement)
                 #print 'Refinement: %d of %d' % (len(refinedMarkerSet.getMarkerGenes()), len(markerSet.getMarkerGenes()))
                 refinedBinMarkerSet.addMarkerSet(refinedMarkerSet)
-            
+
             curNode = curNode.parent_node
-                
+
         return binMarkerSets, refinedBinMarkerSet
-    
-    def buildDomainMarkerSet(self, tree, curNode, ubiquityThreshold, singleCopyThreshold, bMarkerSet = True, genomeIdsToRemove = None):   
+
+    def buildDomainMarkerSet(self, tree, curNode, ubiquityThreshold, singleCopyThreshold, bMarkerSet = True, genomeIdsToRemove = None):
         """Build domain-specific marker sets for a genome in a LOO-fashion."""
-                               
-        # determine marker sets for bin      
+
+        # determine marker sets for bin
         binMarkerSets = BinMarkerSets(curNode.label, BinMarkerSets.TREE_MARKER_SET)
-        refinedBinMarkerSet = BinMarkerSets(curNode.label, BinMarkerSets.TREE_MARKER_SET)         
+        refinedBinMarkerSet = BinMarkerSets(curNode.label, BinMarkerSets.TREE_MARKER_SET)
 
         # calculate marker set for bacterial or archaeal node
-        uniqueId = curNode.label.split('|')[0] 
+        uniqueId = curNode.label.split('|')[0]
         lineageSpecificRefinement = self.lineageSpecificGenesToRemove[uniqueId]
-        
+
         while curNode != None:
-            uniqueId = curNode.label.split('|')[0] 
+            uniqueId = curNode.label.split('|')[0]
             if uniqueId != 'UID2' and uniqueId != 'UID203':
                 curNode = curNode.parent_node
                 continue
@@ -659,29 +662,29 @@ class MarkerSetBuilder(object):
             genomeIds = set()
             for leaf in leafNodes:
                 genomeIds.add(leaf.taxon.label.replace('IMG_', ''))
-                
+
                 duplicateGenomes = self.duplicateSeqs.get(leaf.taxon.label, [])
                 for dup in duplicateGenomes:
                     genomeIds.add(dup.replace('IMG_', ''))
 
             # remove all genomes from the same taxonomic group as the genome of interest
             if genomeIdsToRemove != None:
-                genomeIds.difference_update(genomeIdsToRemove) 
+                genomeIds.difference_update(genomeIdsToRemove)
 
             if len(genomeIds) >= 2:
                 if bMarkerSet:
                     markerSet = self.buildMarkerSet(genomeIds, ubiquityThreshold, singleCopyThreshold)
                 else:
                     markerSet = MarkerSet(0, 'NA', len(genomeIds), [self.buildMarkerGenes(genomeIds, ubiquityThreshold, singleCopyThreshold)])
-                
+
                 markerSet.lineageStr = uniqueId + ' | ' + taxonomyStr.split(';')[-1]
                 binMarkerSets.addMarkerSet(markerSet)
-        
+
                 #refinedMarkerSet = self.__refineMarkerSet(markerSet, lineageSpecificMarkerSet)
                 refinedMarkerSet = self.____removeInvalidLineageMarkerGenes(markerSet, lineageSpecificRefinement)
                 #print 'Refinement: %d of %d' % (len(refinedMarkerSet.getMarkerGenes()), len(markerSet.getMarkerGenes()))
                 refinedBinMarkerSet.addMarkerSet(refinedMarkerSet)
-            
+
             curNode = curNode.parent_node
-                
+
         return binMarkerSets, refinedBinMarkerSet

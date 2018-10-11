@@ -17,6 +17,9 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+from builtins import range
+
 __prog_name__ = 'findCircularSeqs.py'
 __prog_desc__ = 'identify seqs with near identical start and end motifs'
 
@@ -54,7 +57,7 @@ class FindCircularSeqs(object):
         return posEndMotif
 
       # find first match with an acceptable number of mismatchers
-      for i in xrange(len(seq)-overlap, len(seq)-len(motif)):
+      for i in range(len(seq)-overlap, len(seq)-len(motif)):
         diff = self.hamming(motif, seq[i:i+len(motif)])
         if diff <= motifErrors:
           return i
@@ -76,19 +79,19 @@ class FindCircularSeqs(object):
         if posEndMotif != -1:
           diff = self.hamming(trimmedSeq[0:len(trimmedSeq)-posEndMotif], trimmedSeq[posEndMotif:])
           if diff <= acceptDiff:
-            print '[Putative Circular Sequence]'
-            print seqId
-            print 'M: ' + startMotif
-            print 'S: ' + trimmedSeq[0:len(trimmedSeq)-posEndMotif]
-            print 'E: ' + trimmedSeq[posEndMotif:]
-            print 'Motif length: %d' % (len(trimmedSeq)-posEndMotif)
-            print 'Hamming distance: % d' % diff
-            print 'Sequence length: %d' % len(trimmedSeq)
-            print '--------------'
+            print('[Putative Circular Sequence]')
+            print(seqId)
+            print('M: ' + startMotif)
+            print('S: ' + trimmedSeq[0:len(trimmedSeq)-posEndMotif])
+            print('E: ' + trimmedSeq[posEndMotif:])
+            print('Motif length: %d' % (len(trimmedSeq)-posEndMotif))
+            print('Hamming distance: % d' % diff)
+            print('Sequence length: %d' % len(trimmedSeq))
+            print('--------------')
 
 if __name__ == '__main__':
-    print __prog_name__ + ' v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print(__prog_name__ + ' v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('seq_file', help='sequences to search for circularity')
@@ -105,7 +108,7 @@ if __name__ == '__main__':
         findCircularSeqs = FindCircularSeqs()
         findCircularSeqs.run(args.seq_file, args.length, args.trim, args.errors, args.overlap, args.diff, args.min_len)
     except SystemExit:
-        print "\nControlled exit resulting from an unrecoverable error or warning."
+        print("\nControlled exit resulting from an unrecoverable error or warning.")
     except:
-        print "\nUnexpected error:", sys.exc_info()[0]
+        print("\nUnexpected error:", sys.exc_info()[0])
         raise

@@ -17,6 +17,8 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 __prog_desc__ = 'infer trees from sequence alignments'
 
 __author__ = 'Donovan Parks'
@@ -42,7 +44,7 @@ class MakeTrees(object):
         treeList = open(outputDir + '/treeList.txt', 'w')
         files = os.listdir(alignDir)
         for f in files:
-            if f.endswith(extension):                
+            if f.endswith(extension):
                 # replace any '*' amino acids with an 'X' as many downstream programs do not like asterisk
                 fin = open(os.path.join(alignDir, f))
                 data = fin.readlines()
@@ -61,12 +63,12 @@ class MakeTrees(object):
 
         treeList.close()
 
-        print 'Building trees...'
+        print('Building trees...')
         os.system('cat ' + outputDir + '/treeList.txt | parallel --max-procs ' + str(numThreads))
 
 if __name__ == '__main__':
-    print 'MakeTrees v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print('MakeTrees v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('align_dir', help='directory containing multiple sequence alignments')

@@ -19,6 +19,8 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 import os
 import sys
 import logging
@@ -236,7 +238,7 @@ class TreeParser():
                 if leaf.taxon.label.startswith('IMG_'):
                     found_ref_genome = True
                     break
-                    
+
             if found_ref_genome:
                 break
 

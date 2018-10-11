@@ -30,7 +30,7 @@ import logging
 import math
 import csv
 
-from common import binIdFromFilename
+from .common import binIdFromFilename
 from checkm.util.seqUtils import readFasta
 
 

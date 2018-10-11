@@ -19,7 +19,7 @@ import numpy as np
 
 from matplotlib.ticker import MaxNLocator
 
-from AbstractPlot import AbstractPlot
+from .AbstractPlot import AbstractPlot
 
 from checkm.util.seqUtils import readFasta
 

@@ -17,6 +17,8 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+
 __prog_desc__ = 'create a reference genome tree suitable for collapsing'
 
 __author__ = 'Donovan Parks'
@@ -38,23 +40,23 @@ from checkm.lib.img import IMG
 class ClassTree(object):
     def __init__(self):
         self.img = IMG()
-    
+
     def run(self):
         tree = dendropy.Tree.get_from_path('../data/genome_tree/genome_tree_prok.refpkg/genome_tree.final.tre', schema='newick', as_rooted=True, preserve_underscores=True)
-        
+
         metadata = self.img.genomeMetadata()
-        
+
         # relabel taxa
         for leaf in tree.leaf_nodes():
             genomeId = leaf.taxon.label.replace('IMG_', '')
             classT = metadata[genomeId]['taxonomy'][2]
             newLeafLabel = classT + '_' + genomeId
             leaf.taxon.label = newLeafLabel
-            
+
         # relabel internal nodes
         for node in tree.internal_nodes():
             uid, taxaStr, bootstrap = node.label.split('|')
-            
+
             if bootstrap:
                 node.label = uid + ':' + str(node.edge_length) + '[' + str(int(float(bootstrap)*100 + 0.5)) + ']'
             else:
@@ -65,8 +67,8 @@ class ClassTree(object):
         tree.write_to_path('./experiments/classTree_no_internal.tre', schema='newick', suppress_rooting=True, suppress_edge_lengths=True, unquoted_underscores=True, suppress_internal_node_labels=True)
 
 if __name__ == '__main__':
-    print 'ClassTree v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print('ClassTree v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
 
     classTree = ClassTree()
     classTree.run()

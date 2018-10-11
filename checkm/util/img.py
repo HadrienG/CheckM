@@ -15,6 +15,9 @@
 #                                                                             #
 ###############################################################################
 
+from __future__ import print_function
+from builtins import range
+
 import os
 import sys
 import logging
@@ -195,7 +198,7 @@ class IMG(object):
         genomeIdsOfInterest = set()
         for genomeId in metadata:
             bKeep = True
-            for r in xrange(0, len(searchTaxa)):
+            for r in range(0, len(searchTaxa)):
                 if taxonStr == 'universal':
                     bKeep = True
                 elif taxonStr == 'prokaryotes' and (metadata[genomeId]['taxonomy'][0] == 'Bacteria' or metadata[genomeId]['taxonomy'][0] == 'Archaea'):
@@ -222,7 +225,7 @@ class IMG(object):
 
     def lineageStats(self, metadata, mostSpecificRank):
         stats = {}
-        for r in xrange(0, mostSpecificRank + 1):
+        for r in range(0, mostSpecificRank + 1):
             for _, data in metadata.iteritems():
                 taxaStr = ';'.join(data['taxonomy'][0:r + 1])
                 stats[taxaStr] = stats.get(taxaStr, 0) + 1
@@ -231,7 +234,7 @@ class IMG(object):
 
     def lineagesSorted(self, metadata, mostSpecificRank=6):
         lineages = []
-        for r in xrange(0, mostSpecificRank + 1):
+        for r in range(0, mostSpecificRank + 1):
             taxa = set()
             for _, data in metadata.iteritems():
                 if 'unclassified' not in data['taxonomy'][0:r + 1]:
@@ -362,9 +365,9 @@ class IMG(object):
                 if scaffold:
                     familyIdToScaffoldIds[tigrId] = scaffolds
         except:
-            print '[BUG]: __genomeIdToClusterScaffold'
-            print sys.exc_info()[0]
-            print genomeId, geneId, tigrId, pfamId
+            print('[BUG]: __genomeIdToClusterScaffold')
+            print(sys.exc_info()[0])
+            print(genomeId, geneId, tigrId, pfamId)
             sys.exit()
 
         return familyIdToScaffoldIds
@@ -482,9 +485,9 @@ class IMG(object):
                 if positions:
                     familyIdToGenomePositions[tigrId] = positions
         except:
-            print '[BUG]: __genomeFamilyPositions'
-            print sys.exc_info()[0]
-            print genomeId, geneId, tigrId, pfamId
+            print('[BUG]: __genomeFamilyPositions')
+            print(sys.exc_info()[0])
+            print(genomeId, geneId, tigrId, pfamId)
             sys.exit()
 
         return familyIdToGenomePositions

@@ -19,6 +19,8 @@
 #                                                                             #
 ###############################################################################
 
+from builtins import range
+
 import os
 import sys
 import logging
@@ -62,13 +64,13 @@ class AminoAcidIdentity():
                 seqs = readFasta(os.path.join(binPath, f))
 
                 # calculate AAI between all pairs of seqs
-                for i in xrange(0, len(seqs)):
+                for i in range(0, len(seqs)):
                     seqIdI = seqs.keys()[i]
                     binIdI = seqIdI[0:seqIdI.find(DefaultValues.SEQ_CONCAT_CHAR)]
 
                     seqI = seqs[seqIdI]
 
-                    for j in xrange(i + 1, len(seqs)):
+                    for j in range(i + 1, len(seqs)):
                         seqIdJ = seqs.keys()[j]
                         binIdJ = seqIdJ[0:seqIdJ.find(DefaultValues.SEQ_CONCAT_CHAR)]
 
@@ -131,14 +133,14 @@ class AminoAcidIdentity():
         # calculation of AAI should ignore missing data at
         # the start of end of each sequence
         startIndex = 0
-        for i in xrange(0, len(seq1)):
+        for i in range(0, len(seq1)):
             if seq1[i] == '-' or seq2[i] == '-':
                 startIndex = i + 1
             else:
                 break
 
         endIndex = len(seq1)
-        for i in xrange(len(seq1) - 1, 0, -1):
+        for i in range(len(seq1) - 1, 0, -1):
             if seq1[i] == '-' or seq2[i] == '-':
                 endIndex = i
             else:
@@ -146,7 +148,7 @@ class AminoAcidIdentity():
 
         mismatches = 0
         seqLen = 0
-        for i in xrange(startIndex, endIndex):
+        for i in range(startIndex, endIndex):
             if seq1[i] != seq2[i]:
                 mismatches += 1
                 seqLen += 1

@@ -19,11 +19,13 @@
 #                                                                             #
 ###############################################################################
 
+from builtins import range
+
 from matplotlib.collections import LineCollection
 import matplotlib.ticker as ticker
 from matplotlib.cm import get_cmap
 
-from AbstractPlot import AbstractPlot
+from .AbstractPlot import AbstractPlot
 
 
 class ParallelCoordPlot(AbstractPlot):
@@ -58,7 +60,7 @@ class ParallelCoordPlot(AbstractPlot):
         dims = len(data[0])
         x = range(dims)
         axes = []
-        for i in xrange(1, dims):
+        for i in range(1, dims):
             a = self.fig.add_subplot(1, dims - 1, i)
             axes.append(a)
 
@@ -113,7 +115,7 @@ class ParallelCoordPlot(AbstractPlot):
             labels = list()
             step = min_max_range[dimension][2] / (ticks - 1)
             mn = min_max_range[dimension][0]
-            for i in xrange(ticks):
+            for i in range(ticks):
                 v = mn + i * step
                 labels.append('%4.2f' % v)
 
@@ -135,7 +137,7 @@ class ParallelCoordPlot(AbstractPlot):
         ticks = len(axx.get_yticklabels())
         step = min_max_range[dimension][2] / (ticks - 1)
         mn = min_max_range[dimension][0]
-        labels = ['%4.2f' % (mn + i * step) for i in xrange(ticks)]
+        labels = ['%4.2f' % (mn + i * step) for i in range(ticks)]
 
         axx.set_yticklabels(labels)
         for tick in axx.yaxis.get_major_ticks():

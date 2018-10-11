@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-from AbstractPlot import AbstractPlot
+from .AbstractPlot import AbstractPlot
 
 from checkm.util.seqUtils import readFasta, baseCount
 
